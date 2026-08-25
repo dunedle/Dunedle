@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DUNEDLE — El Cántico de Frank Herbert</title>
+    <style>
+        :root {
+            --sand: #c2b280;
+            --sand-dark: #8e7d50;
+            --spice: #9d4edd;
+            --bg-black: #0a0a0a;
+            --panel-gray: #1a1a1a;
+            --text-white: #e0e0e0;
+            --correct: #4ade80;
+            --present: #facc15;
+            --absent: #3f3f46;
+            --border-metal: #4a4a4a;
+            --tile-size: clamp(45px, 9vw, 65px);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+
+        body { transition: background-color 0.4s; }
+        .logo, .card h2, .btn-action { transition: color 0.4s, background-color 0.4s, border-color 0.4s; }
+
+        body {
+            background-color: var(--bg-black);
+            color: var(--text-white);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #spice-canvas { position: fixed; top: 0; left: 0; z-index: -1; pointer-events: none; }
+
+        header {
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border-metal);
+            background: rgba(10, 10, 10, 0.9);
+            backdrop-filter: blur(5px);
+            z-index: 100;
+            gap: 0.5rem;
+        }
+
+        .logo { color: var(--sand); letter-spacing: 5px; font-weight: 900; cursor: pointer; font-size: 1.8rem; text-shadow: 0 0 10px rgba(194, 178, 128, 0.3); }
+
+        .header-side { display: flex; align-items: center; gap: 0.5rem; min-width: 90px; }
+        .header-side.right { justify-content: flex-end; }
+        .icon-btn {
+            background: transparent; border: 1px solid var(--border-metal); color: var(--sand);
+            width: 34px; height: 34px; border-radius: 50%; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-size: 1rem;
+        }
+        .icon-btn:hover { border-color: var(--sand); }
+
+        .theme-swatches { display: flex; gap: 6px; }
+        .swatch {
+            width: 18px; height: 18px; border-radius: 50%; cursor: pointer;
+            border: 2px solid transparent; padding: 0;
+        }
+        .swatch.active { border-color: var(--text-white); }
+        .swatch-fremen { background: linear-gradient(135deg, #c2b280, #9d4edd); }
+        .swatch-harkonnen { background: linear-gradient(135deg, #e63946, #0a0a0a); }
+        .swatch-atreides { background: linear-gradient(135deg, #7cc576, #c0c0c0); }
+
+        /* --- Modal --- */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 200; padding: 1rem; backdrop-filter: blur(3px);
+        }
+        .modal-box {
+            background: linear-gradient(145deg, var(--panel-gray), #111);
+            border: 2px solid var(--border-metal); border-radius: 12px;
+            padding: 1.5rem; max-width: 480px; width: 100%; max-height: 85vh; overflow-y: auto;
+        }
+        .modal-box h2 { color: var(--sand); margin-bottom: 0.8rem; }
+        .modal-box h3 { color: var(--sand); margin: 1rem 0 0.3rem; font-size: 1rem; }
+        .modal-box p { line-height: 1.5; margin-bottom: 0.4rem; font-size: 0.95rem; }
+        .modal-legend { display: flex; gap: 10px; margin: 0.5rem 0; flex-wrap: wrap; }
+        .modal-legend span { display: flex; align-items: center; gap: 5px; font-size: 0.85rem; }
+        .legend-box { width: 16px; height: 16px; border-radius: 3px; display: inline-block; }
+
+        .share-btn {
+            background: transparent; border: 2px solid var(--sand); color: var(--sand);
+            padding: 12px; border-radius: 8px; font-weight: bold; width: 100%;
+            cursor: pointer; margin-top: 10px; font-size: 1rem;
+        }
+        .share-btn:active { background: rgba(194,178,128,0.15); }
+
+        #confetti-canvas { position: fixed; top: 0; left: 0; z-index: 300; pointer-events: none; }
+
+        #view-port {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        /* --- Menú Principal --- */
+        .home-menu { display: flex; flex-direction: column; gap: 1rem; width: 100%; max-width: 500px; padding-top: 1rem; }
+        .card {
+            background: linear-gradient(145deg, var(--panel-gray), #111);
+            border: 2px solid var(--border-metal);
+            padding: 1.5rem;
+            border-radius: 12px;
+            cursor: pointer;
+            position: relative;
+            transition: 0.3s;
+        }
+        .card:hover { border-color: var(--sand); }
+        .card h2 { color: var(--sand); margin-bottom: 0.3rem; font-size: 1.4rem; }
+        .status-badge { position: absolute; top: 15px; right: 15px; font-size: 1.2rem; }
+
+        /* --- Wordle Board --- */
+        .grid-container { width: 100%; display: flex; justify-content: center; padding: 10px 0; overflow-x: auto; }
+        .grid { display: grid; gap: 8px; width: fit-content; }
+        .tile {
+            width: var(--tile-size); height: var(--tile-size);
+            border: 2px solid var(--border-metal);
+            display: flex; justify-content: center; align-items: center;
+            font-size: 1.5rem; font-weight: bold; text-transform: uppercase;
+            background: rgba(0,0,0,0.5); perspective: 1000px;
+        }
+
+        .tile.flip { animation: flip-cell 0.6s ease-in-out forwards; }
+        @keyframes flip-cell {
+            0% { transform: rotateX(0deg); }
+            50% { transform: rotateX(90deg); background: var(--absent); }
+            100% { transform: rotateX(0deg); }
+        }
+
+        .tile.correct { background: var(--correct); border-color: var(--correct); }
+        .tile.present { background: var(--present); border-color: var(--present); color: black; }
+        .tile.absent { background: var(--absent); border-color: var(--absent); }
+
+        /* --- Historial --- */
+        .history-container { width: 100%; max-width: 400px; margin-top: 20px; }
+        .history-item { 
+            padding: 10px; margin-bottom: 5px; border-radius: 6px; 
+            display: flex; justify-content: space-between;
+            animation: slideIn 0.3s ease-out;
+        }
+        .history-wrong { background: rgba(239, 68, 68, 0.15); border-left: 4px solid #ef4444; color: #ef4444; }
+        .history-correct { background: rgba(74, 222, 128, 0.15); border-left: 4px solid var(--correct); color: var(--correct); }
+
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Teclado --- */
+        .keyboard { width: 100%; max-width: 600px; padding: 10px; margin-top: auto; }
+        .key-row { display: flex; justify-content: center; gap: 4px; margin-bottom: 6px; }
+        .key {
+            height: 50px; border-radius: 4px; background: var(--absent); color: white;
+            border: 0; flex: 1; font-weight: bold; cursor: pointer; font-size: 0.9rem;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .key.wide { flex: 1.5; }
+        .key.correct { background: var(--correct); color: black; }
+        .key.present { background: var(--present); color: black; }
+        .key.absent-key { background: #222; color: #555; }
+
+        /* --- UI Comprobación --- */
+        .input-group { position: relative; width: 100%; max-width: 400px; margin: 20px 0; }
+        input[type="text"] {
+            width: 100%; padding: 15px; background: var(--panel-gray);
+            border: 2px solid var(--border-metal); color: white; border-radius: 8px; font-size: 1.1rem;
+        }
+        .suggestions {
+            position: absolute; top: 100%; left: 0; right: 0;
+            background: #222; border: 1px solid var(--spice); border-radius: 8px; z-index: 100; display: none;
+        }
+        .suggestion-item { padding: 12px; cursor: pointer; border-bottom: 1px solid #333; }
+        .suggestion-item:hover { background: var(--spice); }
+
+        /* --- Paneles Finales --- */
+        .victory-panel { text-align: center; padding: 1.5rem; width: 100%; max-width: 500px; animation: slideIn 0.5s; }
+        .lore-box { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; text-align: left; margin: 15px 0; border-left: 4px solid var(--sand); line-height: 1.5; }
+        .countdown-timer { font-size: 1.8rem; font-weight: bold; color: var(--sand); display: block; margin: 10px 0; letter-spacing: 2px; }
+        .btn-action { background: var(--sand); color: black; border: 0; padding: 15px; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; font-size: 1rem; }
+        .btn-next { background: var(--spice); color: white; }
+
+        .hidden { display: none !important; }
+        .shake { animation: shake 0.4s; }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+    </style>
+</head>
+<body>
+
+    <canvas id="spice-canvas"></canvas>
+    <canvas id="confetti-canvas"></canvas>
+
+    <header>
+        <div class="header-side">
+            <button class="icon-btn" onclick="HowTo.show()" title="Cómo jugar" aria-label="Cómo jugar">?</button>
+            <button class="icon-btn" id="mute-btn" onclick="SoundManager.toggle()" title="Silenciar sonido" aria-label="Silenciar sonido">🔊</button>
+        </div>
+        <h1 class="logo" onclick="Router.go('home')">DUNEDLE</h1>
+        <div class="header-side right">
+            <div class="theme-swatches" role="group" aria-label="Paleta de color">
+                <button class="swatch swatch-fremen" data-theme="fremen" onclick="ThemeManager.set('fremen')" title="Fremen" aria-label="Tema Fremen"></button>
+                <button class="swatch swatch-harkonnen" data-theme="harkonnen" onclick="ThemeManager.set('harkonnen')" title="Harkonnen" aria-label="Tema Harkonnen"></button>
+                <button class="swatch swatch-atreides" data-theme="atreides" onclick="ThemeManager.set('atreides')" title="Atreides" aria-label="Tema Atreides"></button>
+            </div>
+        </div>
+    </header>
+
+    <main id="view-port"></main>
+
+    <script>
+        /* --- BASE DE DATOS --- */
+        const DUNEDATA_WORDS = [
+            { word: "ARRAKIS", desc: "El planeta desierto, única fuente de la melange." },
+            { word: "SHAI-HULUD", desc: "El gran gusano de arena, el Hacedor." },
+            { word: "STILLSUIT", desc: "Prenda que recupera la humedad corporal." },
+            { word: "GOM JABBAR", desc: "Aguja envenenada para pruebas de humanidad." },
+            { word: "BENE GESSERIT", desc: "Hermandad milenaria de control mental y genético." },
+            { word: "MUAD'DIB", desc: "Nombre fremen de Paul: 'el ratón del desierto'." },
+            { word: "SARDAUKAR", desc: "Los temibles soldados fanáticos del Emperador." },
+            { word: "FEDAYKIN", desc: "Los comandos de la muerte fremen liderados por Paul." },
+            { word: "MENTAT", desc: "Humano entrenado para pensar como una computadora." },
+            { word: "LANDSRAAD", desc: "El consejo que reúne a todas las grandes casas nobles." },
+            { word: "KWISATZ HADERACH", desc: "El objetivo final del programa genético Bene Gesserit." },
+            { word: "CHOAM", desc: "La compañía que controla el comercio de todo el Imperio." },
+            { word: "ORNITOPTERO", desc: "Aeronave de alas batientes usada para cruzar el desierto." },
+            { word: "KANLY", desc: "Vendetta formal entre casas nobles, con reglas estrictas." },
+            { word: "SIETCH TABR", desc: "El hogar de Stilgar y su gente en las rocas de Arrakis." }
+        ];
+
+        const DUNEDATA_CHARACTERS = [
+            { name: "Paul Atreides", emojis: ["👑", "🏜️", "👁️", "🐭"], desc: "El Kwisatz Haderach y Mesías Fremen.", org: "Casa Atreides", planet: "Arrakis", first: "Dune" },
+            { name: "Leto Atreides", emojis: ["🐂", "💍", "🗡️", "🏛️"], desc: "El Duque Rojo, padre de Paul.", org: "Casa Atreides", planet: "Caladan", first: "Dune" },
+            { name: "Lady Jessica", emojis: ["👩‍🏫", "🧘", "🤰", "💧"], desc: "Reverenda Madre y madre de Paul.", org: "Bene Gesserit", planet: "Caladan", first: "Dune" },
+            { name: "Stilgar", emojis: ["🧔", "💧", "🏜️", "🛡️"], desc: "Naib del Sietch Tabr.", org: "Fremen", planet: "Arrakis", first: "Dune" },
+            { name: "Duncan Idaho", emojis: ["⚔️", "🔁", "💀", "🛡️"], desc: "El espadachín leal de los Atreides, más tarde resucitado como ghola.", org: "Casa Atreides", planet: "Caladan", first: "Dune" },
+            { name: "Gurney Halleck", emojis: ["🎸", "🗡️", "😠", "🤎"], desc: "Maestro de armas y trovador de la Casa Atreides.", org: "Casa Atreides", planet: "Caladan", first: "Dune" },
+            { name: "Barón Vladimir Harkonnen", emojis: ["🦈", "🛢️", "🖤", "👑"], desc: "El cruel y astuto señor de la Casa Harkonnen.", org: "Casa Harkonnen", planet: "Giedi Prime", first: "Dune" },
+            { name: "Feyd-Rautha", emojis: ["🗡️", "😈", "👑", "🩸"], desc: "El sobrino ambicioso y letal del Barón Harkonnen.", org: "Casa Harkonnen", planet: "Giedi Prime", first: "Dune" },
+            { name: "Chani", emojis: ["💧", "🏜️", "❤️", "🗡️"], desc: "Guerrera fremen y compañera de Paul.", org: "Fremen", planet: "Arrakis", first: "Dune" },
+            { name: "Liet-Kynes", emojis: ["🌱", "🏜️", "🔬", "🕊️"], desc: "Planetólogo imperial con lealtad secreta a los fremen.", org: "Fremen / Imperio", planet: "Arrakis", first: "Dune" },
+            { name: "Princesa Irulan", emojis: ["📜", "👑", "✍️", "💍"], desc: "Cronista imperial e hija del Emperador Shaddam IV.", org: "Casa Corrino", planet: "Kaitain", first: "Dune" }
+        ];
+
+        const DUNEDATA_QUOTES = [
+            { text: "El miedo es el asesino de la mente.", char: "Paul Atreides", context: "Letanía contra el miedo.", book: "Dune" },
+            { text: "Un comienzo es un tiempo muy delicado.", char: "Princesa Irulan", context: "Manual de Muad'Dib.", book: "Dune" },
+            { text: "Dios creó Arrakis para probar a los fieles.", char: "Proverbio Fremen", context: "Dicho popular.", book: "Dune" },
+            { text: "La especia debe fluir.", char: "Proverbio Imperial", context: "El lema que resume la dependencia de todo el Imperio hacia la melange.", book: "Dune" },
+            { text: "El que puede destruir una cosa, la controla.", char: "Paul Atreides", context: "Reflexión de Paul sobre el verdadero significado del poder.", book: "Dune" },
+            { text: "El desierto no perdona a los débiles.", char: "Proverbio Fremen", context: "Sabiduría del desierto compartida en los sietch.", book: "Dune" },
+            { text: "Un líder fremen sirve, no gobierna.", char: "Stilgar", context: "Palabras de Stilgar sobre el liderazgo entre su gente.", book: "Dune" },
+            { text: "Quien controla la especia, controla el universo.", char: "Barón Vladimir Harkonnen", context: "Reflexión sobre el verdadero poder detrás del trono imperial.", book: "Dune" }
+        ];
+
+        // Une nombres de personajes con emoji y autores de frases, para que el
+        // buscador de sugerencias siempre incluya cualquier respuesta correcta posible.
+        const DUNEDATA_ALL_NAMES = Array.from(new Set([
+            ...DUNEDATA_CHARACTERS.map(c => c.name),
+            ...DUNEDATA_QUOTES.map(q => q.char)
+        ]));
+
+        /* --- MOTOR DIARIO --- */
+        const Daily = {
+            getSeed() { return new Date().getFullYear() * 10000 + (new Date().getMonth() + 1) * 100 + new Date().getDate(); },
+            getIndex(arr) { return this.getSeed() % arr.length; },
+            getState(key) {
+                const s = localStorage.getItem('dunedle_' + key);
+                if(!s) return { finished: false, won: false, history: [], seed: this.getSeed() };
+                const data = JSON.parse(s);
+                if(data.seed !== this.getSeed()) return { finished: false, won: false, history: [], seed: this.getSeed() };
+                if(!data.history) data.history = [];
+                return data;
+            },
+            saveState(key, data) {
+                data.seed = this.getSeed();
+                localStorage.setItem('dunedle_' + key, JSON.stringify(data));
+            }
+        };
+
+        /* --- ESTADÍSTICAS --- */
+        function todayStr() { return new Date().toISOString().slice(0, 10); }
+        function daysBetween(dateStr) {
+            const last = new Date(dateStr + 'T00:00:00');
+            const now = new Date(); now.setHours(0, 0, 0, 0);
+            return Math.round((now - last) / 86400000);
+        }
+        const StatsManager = {
+            key(game) { return 'dunedle_stats_' + game; },
+            get(game) {
+                const raw = localStorage.getItem(this.key(game));
+                if(!raw) return { played: 0, wins: 0, currentStreak: 0, maxStreak: 0, lastDate: null, distribution: [0,0,0,0,0,0] };
+                const s = JSON.parse(raw);
+                if(!s.distribution) s.distribution = [0,0,0,0,0,0];
+                return s;
+            },
+            save(game, s) { localStorage.setItem(this.key(game), JSON.stringify(s)); },
+            record(game, won, attempts) {
+                const s = this.get(game);
+                s.played++;
+                if(won) {
+                    s.wins++;
+                    const gap = s.lastDate ? daysBetween(s.lastDate) : null;
+                    if(gap === 1) s.currentStreak++;
+                    else if(gap === 0) { /* ya contado hoy, no debería pasar */ }
+                    else s.currentStreak = 1;
+                    s.maxStreak = Math.max(s.maxStreak, s.currentStreak);
+                    if(game === 'wordle' && attempts >= 1 && attempts <= 6) {
+                        s.distribution[attempts - 1] = (s.distribution[attempts - 1] || 0) + 1;
+                    }
+                } else {
+                    s.currentStreak = 0;
+                }
+                s.lastDate = todayStr();
+                this.save(game, s);
+            }
+        };
+        function statRow(s) {
+            const pct = s.played ? Math.round((s.wins / s.played) * 100) : 0;
+            return `
+                <div style="display:flex; justify-content:space-around; text-align:center; margin-top:0.6rem;">
+                    <div><div style="font-size:1.4rem; font-weight:bold; color:var(--sand)">${s.played}</div><div style="font-size:0.75rem; color:#999;">jugados</div></div>
+                    <div><div style="font-size:1.4rem; font-weight:bold; color:var(--sand)">${pct}%</div><div style="font-size:0.75rem; color:#999;">victorias</div></div>
+                    <div><div style="font-size:1.4rem; font-weight:bold; color:var(--sand)">${s.currentStreak}</div><div style="font-size:0.75rem; color:#999;">racha actual</div></div>
+                    <div><div style="font-size:1.4rem; font-weight:bold; color:var(--sand)">${s.maxStreak}</div><div style="font-size:0.75rem; color:#999;">mejor racha</div></div>
+                </div>
+            `;
+        }
+        const StatsView = {
+            render(container) {
+                const w = StatsManager.get('wordle');
+                const e = StatsManager.get('emoji');
+                const q = StatsManager.get('quote');
+                const maxDist = Math.max(1, ...w.distribution);
+                const distBars = w.distribution.map((count, i) => `
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                        <span style="width:14px; font-size:0.8rem; color:var(--sand);">${i+1}</span>
+                        <div style="flex:1; background:#222; border-radius:4px; overflow:hidden;">
+                            <div style="width:${count ? Math.max(8, (count / maxDist) * 100) : 0}%; background:var(--correct); color:black; font-size:0.75rem; font-weight:bold; text-align:right; padding:2px 6px; min-height:1.2rem;">${count || ''}</div>
+                        </div>
+                    </div>
+                `).join('');
+                container.innerHTML = `
+                    <div class="home-menu" style="max-width:520px;">
+                        <h2 style="color:var(--sand); text-align:center; margin-bottom:0.2rem;">📊 Tus estadísticas</h2>
+                        <div class="card" style="cursor:default;">
+                            <h2>🟨 Palabra del día</h2>
+                            ${statRow(w)}
+                            <p style="margin:0.8rem 0 0.4rem; color:var(--sand); font-size:0.9rem;">Distribución de intentos</p>
+                            ${distBars}
+                        </div>
+                        <div class="card" style="cursor:default;">
+                            <h2>😀 Personaje del día</h2>
+                            ${statRow(e)}
+                        </div>
+                        <div class="card" style="cursor:default;">
+                            <h2>💬 Frase del día</h2>
+                            ${statRow(q)}
+                        </div>
+                        <button class="btn-action" onclick="Router.go('home')">INICIO</button>
+                    </div>
+                `;
+            }
+        };
+
+        const TimerSystem = {
+            interval: null,
+            start() {
+                if(this.interval) clearInterval(this.interval);
+                this.interval = setInterval(() => this.update(), 1000);
+                this.update();
+            },
+            update() {
+                const now = new Date();
+                const next = new Date(now);
+                next.setHours(24, 0, 0, 0);
+                const diff = next - now;
+                if (diff <= 0) { location.reload(); return; }
+                const h = String(Math.floor(diff / 3600000)).padStart(2, '0');
+                const m = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
+                const s = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
+                document.querySelectorAll('.countdown-timer').forEach(el => el.textContent = `${h} h ${m} min ${s} s`);
+            }
+        };
+
+        const Router = {
+            go(view) {
+                const port = document.getElementById('view-port');
+                port.innerHTML = '';
+                window.onkeydown = null; 
+                if(view === 'home') this.renderHome(port);
+                else if(view === 'wordle') WordleGame.init(port);
+                else if(view === 'emojis') EmojiGame.init(port);
+                else if(view === 'quotes') QuoteGame.init(port);
+                else if(view === 'stats') StatsView.render(port);
+            },
+            renderHome(container) {
+                const sW = Daily.getState('wordle');
+                const sE = Daily.getState('emoji');
+                const sQ = Daily.getState('quote');
+                const getBadge = (s) => !s.finished ? '⏳' : (s.won ? '✅' : '❌');
+                container.innerHTML = `
+                    <div class="home-menu">
+                        <div class="card" onclick="Router.go('wordle')"><h2>🟨 Palabra del día</h2><p>El reto clásico.</p><span class="status-badge">${getBadge(sW)}</span></div>
+                        <div class="card" onclick="Router.go('emojis')"><h2>😀 Personaje del día</h2><p>Identifica símbolos.</p><span class="status-badge">${getBadge(sE)}</span></div>
+                        <div class="card" onclick="Router.go('quotes')"><h2>💬 Frase del día</h2><p>¿Quién lo dijo?</p><span class="status-badge">${getBadge(sQ)}</span></div>
+                        <div class="card" onclick="Router.go('stats')"><h2>📊 Estadísticas</h2><p>Tu progreso en Dunedle.</p></div>
+                    </div>
+                `;
+            }
+        };
+
+        /* --- WORDLE --- */
+        const WordleGame = {
+            target: "", desc: "", state: null, current: "",
+            init(container) {
+                const data = DUNEDATA_WORDS[Daily.getIndex(DUNEDATA_WORDS)];
+                this.target = data.word.toUpperCase();
+                this.desc = data.desc;
+                this.state = Daily.getState('wordle');
+                if(!this.state.guesses) this.state.guesses = [];
+                this.render(container);
+            },
+            render(container) {
+                container.innerHTML = `<h2 style="margin-bottom:1rem; color:var(--sand)">PALABRA DEL DÍA</h2>`;
+                const gridCont = document.createElement('div');
+                gridCont.className = 'grid-container';
+                const grid = document.createElement('div');
+                grid.className = 'grid';
+                grid.style.gridTemplateColumns = `repeat(${this.target.length}, 1fr)`;
+                const availableWidth = Math.min(window.innerWidth - 32, 500);
+                const gap = 8;
+                const rawSize = (availableWidth - gap * (this.target.length - 1)) / this.target.length;
+                const tileSize = Math.max(26, Math.min(65, rawSize));
+                grid.style.setProperty('--tile-size', tileSize + 'px');
+                for(let i=0; i<6; i++) {
+                    const guess = this.state.guesses[i] || "";
+                    const statuses = (this.state.statuses && this.state.statuses[i]) || null;
+                    let sPtr = 0;
+                    for(let j=0; j<this.target.length; j++) {
+                        const tile = document.createElement('div');
+                        tile.id = `t-${i}-${j}`;
+                        tile.className = 'tile';
+                        if(["'","-"," "].includes(this.target[j])) { tile.textContent = this.target[j]; tile.style.border="none"; }
+                        else if(guess) {
+                            tile.textContent = guess[j];
+                            if(statuses) tile.classList.add(statuses[sPtr]);
+                            sPtr++;
+                        }
+                        grid.appendChild(tile);
+                    }
+                }
+                gridCont.appendChild(grid); container.appendChild(gridCont);
+                if(this.state.finished) this.renderFinal(container);
+                else { this.renderKeyboard(container); this.setupKeyboard(); this.updateKeyboardColors(); }
+            },
+            computeStatuses(fullGuess) {
+                const cleanTarget = this.target.replace(/[^A-ZÑ]/g, '').split('');
+                const cleanGuess = [];
+                for(let i=0; i<this.target.length; i++){
+                    if(!["'","-"," "].includes(this.target[i])) cleanGuess.push(fullGuess[i]);
+                }
+                const result = new Array(cleanGuess.length).fill('absent');
+                const used = new Array(cleanTarget.length).fill(false);
+                for(let i=0; i<cleanGuess.length; i++){
+                    if(cleanGuess[i] === cleanTarget[i]){ result[i] = 'correct'; used[i] = true; }
+                }
+                for(let i=0; i<cleanGuess.length; i++){
+                    if(result[i] === 'correct') continue;
+                    let found = -1;
+                    for(let j=0; j<cleanTarget.length; j++){
+                        if(!used[j] && cleanTarget[j] === cleanGuess[i]){ found = j; break; }
+                    }
+                    if(found !== -1){ result[i] = 'present'; used[found] = true; }
+                }
+                return result;
+            },
+            computeKeyStates() {
+                const rank = { absent: 0, present: 1, correct: 2 };
+                const states = {};
+                (this.state.guesses || []).forEach((g, idx) => {
+                    const statuses = this.state.statuses ? this.state.statuses[idx] : null;
+                    if(!statuses) return;
+                    let sPtr = 0;
+                    for(let i=0; i<this.target.length; i++){
+                        if(["'","-"," "].includes(this.target[i])) continue;
+                        const letter = g[i];
+                        const st = statuses[sPtr]; sPtr++;
+                        if(!states[letter] || rank[st] > rank[states[letter]]) states[letter] = st;
+                    }
+                });
+                return states;
+            },
+            updateKeyboardColors() {
+                const states = this.computeKeyStates();
+                document.querySelectorAll('.keyboard .key').forEach(btn => {
+                    const k = btn.dataset.key;
+                    const st = states[k];
+                    btn.classList.remove('correct', 'present', 'absent-key');
+                    if(st) btn.classList.add(st === 'absent' ? 'absent-key' : st);
+                });
+            },
+            renderKeyboard(container) {
+                const layout = [["Q","W","E","R","T","Y","U","I","O","P"],["A","S","D","F","G","H","J","K","L","Ñ"],["ENTER","Z","X","C","V","B","N","M","⌫"]];
+                const kb = document.createElement('div'); kb.className = 'keyboard';
+                layout.forEach(row => {
+                    const r = document.createElement('div'); r.className = 'key-row';
+                    row.forEach(k => {
+                        const b = document.createElement('button');
+                        b.className = `key ${k.length>1?'wide':''}`; b.textContent = k;
+                        b.dataset.key = k;
+                        b.onclick = () => this.handleInput(k); r.appendChild(b);
+                    });
+                    kb.appendChild(r);
+                });
+                container.appendChild(kb);
+            },
+            setupKeyboard() {
+                window.onkeydown = (e) => {
+                    let k = e.key.toUpperCase();
+                    if(k === "BACKSPACE") k = "⌫";
+                    if(k === "ENTER" || /^[A-ZÑ]$/.test(k) || k === "⌫") this.handleInput(k);
+                };
+            },
+            handleInput(k) {
+                const cleanLen = this.target.replace(/[^A-ZÑ]/g, '').length;
+                if(k === "ENTER") this.submit();
+                else if(k === "⌫") { this.current = this.current.slice(0, -1); this.updateGrid(); }
+                else if(this.current.length < cleanLen && /^[A-ZÑ]$/.test(k)) { this.current += k; this.updateGrid(); }
+            },
+            updateGrid() {
+                const row = this.state.guesses.length;
+                let cPtr = 0;
+                for(let i=0; i<this.target.length; i++){
+                    if(!["'","-"," "].includes(this.target[i])){
+                        document.getElementById(`t-${row}-${i}`).textContent = this.current[cPtr] || "";
+                        cPtr++;
+                    }
+                }
+            },
+            async submit() {
+                const cleanTarget = this.target.replace(/[^A-ZÑ]/g, '');
+                if(this.current.length !== cleanTarget.length) return;
+                let fullGuess = ""; let cPtr = 0;
+                for(let i=0; i<this.target.length; i++){
+                    if(["'","-"," "].includes(this.target[i])) fullGuess += this.target[i];
+                    else fullGuess += this.current[cPtr++];
+                }
+                const rowIdx = this.state.guesses.length;
+                const statuses = this.computeStatuses(fullGuess);
+                this.state.guesses.push(fullGuess);
+                if(!this.state.statuses) this.state.statuses = [];
+                this.state.statuses.push(statuses);
+                let sPtr = 0;
+                for(let i=0; i<this.target.length; i++){
+                    const t = document.getElementById(`t-${rowIdx}-${i}`);
+                    if(["'","-"," "].includes(this.target[i])) continue;
+                    const status = statuses[sPtr]; sPtr++;
+                    t.classList.add('flip'); await new Promise(r => setTimeout(r, 100));
+                    t.classList.add(status);
+                    if(status === 'correct') SoundManager.correct();
+                    else if(status === 'present') SoundManager.present();
+                    else SoundManager.absent();
+                }
+                this.updateKeyboardColors();
+                if(fullGuess === this.target) { this.state.finished = true; this.state.won = true; }
+                else if(this.state.guesses.length >= 6) { this.state.finished = true; this.state.won = false; }
+                if(this.state.finished) {
+                    setTimeout(() => { if(this.state.won) SoundManager.win(); else SoundManager.wrong(); }, 350);
+                }
+                if(this.state.finished && !this.state.statsRecorded) {
+                    StatsManager.record('wordle', this.state.won, this.state.guesses.length);
+                    this.state.statsRecorded = true;
+                }
+                Daily.saveState('wordle', this.state); this.current = "";
+                if(this.state.finished) setTimeout(() => this.render(document.getElementById('view-port')), 500);
+            },
+            renderFinal(container) {
+                container.innerHTML += `
+                    <div class="victory-panel">
+                        <h2 style="color:${this.state.won?'var(--correct)':'#ef4444'}">${this.state.won?'¡Misión Cumplida!':'El desierto vence'}</h2>
+                        <h1>${this.target}</h1><div class="lore-box">${this.desc}</div>
+                        <button class="share-btn" onclick="WordleGame.share(this)">📋 Compartir resultado</button>
+                        <p>Próximo reto en:</p><span class="countdown-timer">00 h 00 min 00 s</span>
+                        ${renderFlowButtons('wordle')}
+                    </div>
+                `;
+                TimerSystem.start();
+                if(this.state.won) Confetti.burst();
+            },
+            share(btn) { Share.copy(Share.wordleText(this.state), btn); }
+        };
+
+        /* --- EMOJIS --- */
+        const EmojiGame = {
+            target: null, state: null,
+            init(container) {
+                this.target = DUNEDATA_CHARACTERS[Daily.getIndex(DUNEDATA_CHARACTERS)];
+                this.state = Daily.getState('emoji'); this.render(container);
+            },
+            render(container) {
+                if(this.state.finished) {
+                    container.innerHTML = `
+                        <div class="victory-panel">
+                            <h2 style="color:var(--correct)">IDENTIFICADO</h2>
+                            <div style="font-size:3rem; margin:20px 0;">${this.target.emojis.join(' ')}</div>
+                            <h1>${this.target.name}</h1><div class="lore-box">${this.target.desc}</div>
+                            <button class="share-btn" onclick="EmojiGame.share(this)">📋 Compartir resultado</button>
+                            <p>Próximo en:</p><span class="countdown-timer">00 h 00 min 00 s</span>
+                            ${renderFlowButtons('emoji')}
+                        </div>
+                    `;
+                    TimerSystem.start(); Confetti.burst(); return;
+                }
+                container.innerHTML = `
+                    <div class="victory-panel">
+                        <h2>PERSONAJE DEL DÍA</h2>
+                        <div style="font-size:3rem; margin:20px 0;">${this.target.emojis.slice(0, (this.state.history.length) + 1).join(' ')}</div>
+                        <div class="input-group" style="margin:0 auto"><input type="text" id="e-input" placeholder="Nombre..." autocomplete="off"><div id="e-sugg" class="suggestions"></div></div>
+                        <button class="btn-action" onclick="EmojiGame.check()">COMPROBAR</button>
+                        <div class="history-container">${this.state.history.map(h => `<div class="history-item history-wrong"><span>❌ ${h}</span></div>`).join('')}</div>
+                    </div>
+                `;
+                this.setupSearch();
+            },
+            setupSearch() {
+                const input = document.getElementById('e-input');
+                const sugg = document.getElementById('e-sugg');
+                input.oninput = () => {
+                    const val = input.value.toLowerCase(); sugg.innerHTML = "";
+                    if(!val) { sugg.style.display="none"; return; }
+                    const matches = DUNEDATA_CHARACTERS.map(c=>c.name).filter(n => n.toLowerCase().includes(val)).slice(0,5);
+                    if(matches.length){
+                        sugg.style.display="block";
+                        matches.forEach(m => {
+                            const d = document.createElement('div'); d.className="suggestion-item"; d.textContent=m;
+                            d.onclick = () => { input.value = m; sugg.style.display="none"; this.check(); };
+                            sugg.appendChild(d);
+                        });
+                    }
+                };
+            },
+            check() {
+                const val = document.getElementById('e-input').value.trim();
+                if(!val) return;
+                if(val.toLowerCase() === this.target.name.toLowerCase()){
+                    this.state.finished = true; this.state.won = true;
+                    SoundManager.win();
+                } else {
+                    this.state.history.unshift(val);
+                    SoundManager.wrong();
+                }
+                if(this.state.finished && !this.state.statsRecorded) {
+                    StatsManager.record('emoji', true, this.state.history.length + 1);
+                    this.state.statsRecorded = true;
+                }
+                Daily.saveState('emoji', this.state); this.render(document.getElementById('view-port'));
+            },
+            share(btn) { Share.copy(Share.simpleText('Personaje del día', true, this.state.history.length + 1), btn); }
+        };
+
+        /* --- FRASES --- */
+        const QuoteGame = {
+            target: null, state: null,
+            init(container) {
+                this.target = DUNEDATA_QUOTES[Daily.getIndex(DUNEDATA_QUOTES)];
+                this.state = Daily.getState('quote'); this.render(container);
+            },
+            render(container) {
+                if(this.state.finished) {
+                    container.innerHTML = `
+                        <div class="victory-panel">
+                            <h2 style="color:var(--correct)">SABIDURÍA RECONOCIDA</h2>
+                            <p style="font-style:italic; margin:1rem 0;">"${this.target.text}"</p>
+                            <h1>${this.target.char}</h1><div class="lore-box">${this.target.context}</div>
+                            <button class="share-btn" onclick="QuoteGame.share(this)">📋 Compartir resultado</button>
+                            <p>Próximo en:</p><span class="countdown-timer">00 h 00 min 00 s</span>
+                            ${renderFlowButtons('quote')}
+                        </div>
+                    `;
+                    TimerSystem.start(); Confetti.burst(); return;
+                }
+                container.innerHTML = `
+                    <div class="victory-panel">
+                        <h2>¿QUIÉN DIJO ESTO?</h2>
+                        <p style="font-style:italic; margin:20px 0; color:var(--sand); font-size:1.3rem;">"${this.target.text}"</p>
+                        <div class="input-group" style="margin:0 auto"><input type="text" id="q-input" placeholder="Nombre..." autocomplete="off"><div id="q-sugg" class="suggestions"></div></div>
+                        <button class="btn-action" onclick="QuoteGame.check()">COMPROBAR</button>
+                        <div class="history-container">${this.state.history.map(h => `<div class="history-item history-wrong"><span>❌ ${h}</span></div>`).join('')}</div>
+                    </div>
+                `;
+                this.setupSearch();
+            },
+            setupSearch() {
+                const input = document.getElementById('q-input');
+                const sugg = document.getElementById('q-sugg');
+                input.oninput = () => {
+                    const val = input.value.toLowerCase(); sugg.innerHTML = "";
+                    if(!val) { sugg.style.display="none"; return; }
+                    const matches = DUNEDATA_ALL_NAMES.filter(n => n.toLowerCase().includes(val)).slice(0,5);
+                    if(matches.length){
+                        sugg.style.display="block";
+                        matches.forEach(m => {
+                            const d = document.createElement('div'); d.className="suggestion-item"; d.textContent=m;
+                            d.onclick = () => { input.value = m; sugg.style.display="none"; this.check(); };
+                            sugg.appendChild(d);
+                        });
+                    }
+                };
+            },
+            check() {
+                const val = document.getElementById('q-input').value.trim();
+                if(!val) return;
+                if(val.toLowerCase() === this.target.char.toLowerCase()){
+                    this.state.finished = true; this.state.won = true;
+                    SoundManager.win();
+                } else {
+                    this.state.history.unshift(val);
+                    SoundManager.wrong();
+                }
+                if(this.state.finished && !this.state.statsRecorded) {
+                    StatsManager.record('quote', true, this.state.history.length + 1);
+                    this.state.statsRecorded = true;
+                }
+                Daily.saveState('quote', this.state); this.render(document.getElementById('view-port'));
+            },
+            share(btn) { Share.copy(Share.simpleText('Frase del día', true, this.state.history.length + 1), btn); }
+        };
+
+        function renderFlowButtons(current) {
+            const sW = Daily.getState('wordle'), sE = Daily.getState('emoji'), sQ = Daily.getState('quote');
+            if(sW.finished && sE.finished && sQ.finished) return `<p style="color:var(--sand); margin-top:20px;">¡Has completado todo por hoy!</p><button class="btn-action" onclick="Router.go('home')">INICIO</button>`;
+            let b = `<p style="margin-top:20px;">Retos pendientes:</p>`;
+            if(!sW.finished && current !== 'wordle') b += `<button class="btn-action btn-next" onclick="Router.go('wordle')">➡️ Palabra</button>`;
+            if(!sE.finished && current !== 'emoji') b += `<button class="btn-action btn-next" onclick="Router.go('emojis')">➡️ Personaje</button>`;
+            if(!sQ.finished && current !== 'quote') b += `<button class="btn-action btn-next" onclick="Router.go('quotes')">➡️ Frase</button>`;
+            return b + `<button class="btn-action" onclick="Router.go('home')">INICIO</button>`;
+        }
+
+        const Spice = {
+            canvas: document.getElementById('spice-canvas'), ctx: null, p: [],
+            color: '157, 78, 221',
+            init() {
+                this.ctx = this.canvas.getContext('2d');
+                window.onresize = () => {
+                    this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight;
+                    Confetti.resize();
+                };
+                window.onresize();
+                for(let i=0; i<50; i++) this.p.push({x:Math.random()*this.canvas.width, y:Math.random()*this.canvas.height, s:Math.random()*2, vy:Math.random()*-0.5, o:Math.random()});
+                this.animate();
+            },
+            animate() {
+                this.ctx.clearRect(0,0,this.canvas.width, this.canvas.height);
+                this.p.forEach(p => {
+                    p.y += p.vy; if(p.y < 0) p.y = this.canvas.height;
+                    this.ctx.fillStyle = `rgba(${this.color}, ${p.o})`;
+                    this.ctx.beginPath(); this.ctx.arc(p.x, p.y, p.s, 0, Math.PI*2); this.ctx.fill();
+                });
+                requestAnimationFrame(() => this.animate());
+            }
+        };
+
+        /* --- CONFETI DE SPICE (al ganar) --- */
+        const Confetti = {
+            canvas: document.getElementById('confetti-canvas'), ctx: null, particles: [],
+            init() { this.ctx = this.canvas.getContext('2d'); this.resize(); this.loop(); },
+            resize() { this.canvas.width = window.innerWidth; this.canvas.height = window.innerHeight; },
+            burst() {
+                const colors = ['#c2b280', '#9d4edd', '#4ade80', '#facc15', getComputedStyle(document.documentElement).getPropertyValue('--sand')];
+                for(let i=0; i<90; i++){
+                    this.particles.push({
+                        x: this.canvas.width / 2,
+                        y: this.canvas.height / 3,
+                        vx: (Math.random()-0.5) * 12,
+                        vy: (Math.random()-1.2) * 12,
+                        s: Math.random()*5 + 2,
+                        color: colors[Math.floor(Math.random()*colors.length)],
+                        life: 100
+                    });
+                }
+            },
+            loop() {
+                this.ctx.clearRect(0,0,this.canvas.width, this.canvas.height);
+                this.particles = this.particles.filter(p => p.life > 0);
+                this.particles.forEach(p => {
+                    p.vy += 0.25; p.x += p.vx; p.y += p.vy; p.life--;
+                    this.ctx.globalAlpha = Math.max(p.life / 100, 0);
+                    this.ctx.fillStyle = p.color;
+                    this.ctx.fillRect(p.x, p.y, p.s, p.s);
+                });
+                this.ctx.globalAlpha = 1;
+                requestAnimationFrame(() => this.loop());
+            }
+        };
+
+        /* --- SONIDO --- */
+        const SoundManager = {
+            ctx: null,
+            muted: false,
+            init() {
+                this.muted = localStorage.getItem('dunedle_muted') === '1';
+                this.updateIcon();
+            },
+            getCtx() {
+                if(!this.ctx) {
+                    const AC = window.AudioContext || window.webkitAudioContext;
+                    if(!AC) return null;
+                    this.ctx = new AC();
+                }
+                if(this.ctx.state === 'suspended') this.ctx.resume();
+                return this.ctx;
+            },
+            tone(freq, duration, type, volume, delay) {
+                if(this.muted) return;
+                const ctx = this.getCtx();
+                if(!ctx) return;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = type || 'sine';
+                osc.frequency.value = freq;
+                osc.connect(gain); gain.connect(ctx.destination);
+                const start = ctx.currentTime + (delay || 0);
+                gain.gain.setValueAtTime(0, start);
+                gain.gain.linearRampToValueAtTime(volume || 0.1, start + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+                osc.start(start);
+                osc.stop(start + duration + 0.03);
+            },
+            correct() { this.tone(660, 0.12, 'sine', 0.12); },
+            present() { this.tone(440, 0.12, 'sine', 0.10); },
+            absent() { this.tone(180, 0.10, 'sine', 0.05); },
+            wrong() { this.tone(160, 0.18, 'sawtooth', 0.07); },
+            win() { [523, 659, 784, 1046].forEach((f, i) => this.tone(f, 0.18, 'sine', 0.11, i * 0.09)); },
+            toggle() {
+                this.muted = !this.muted;
+                localStorage.setItem('dunedle_muted', this.muted ? '1' : '0');
+                this.updateIcon();
+                if(!this.muted) this.tone(660, 0.1, 'sine', 0.1);
+            },
+            updateIcon() {
+                const btn = document.getElementById('mute-btn');
+                if(btn) btn.textContent = this.muted ? '🔇' : '🔊';
+            }
+        };
+
+        /* --- SELECTOR DE PALETA --- */
+        const ThemeManager = {
+            themes: {
+                fremen:     { sand: '#c2b280', sandDark: '#8e7d50', spice: '#9d4edd', spiceRgb: '157, 78, 221' },
+                harkonnen:  { sand: '#e63946', sandDark: '#7a1f2b', spice: '#ff4d6d', spiceRgb: '230, 57, 70' },
+                atreides:   { sand: '#7cc576', sandDark: '#3f6b3a', spice: '#c0c0c0', spiceRgb: '124, 197, 118' }
+            },
+            current: 'fremen',
+            init() {
+                const saved = localStorage.getItem('dunedle_theme');
+                this.set(saved && this.themes[saved] ? saved : 'fremen', true);
+            },
+            set(name, silent) {
+                const t = this.themes[name]; if(!t) return;
+                this.current = name;
+                const root = document.documentElement.style;
+                root.setProperty('--sand', t.sand);
+                root.setProperty('--sand-dark', t.sandDark);
+                root.setProperty('--spice', t.spice);
+                Spice.color = t.spiceRgb;
+                document.querySelectorAll('.swatch').forEach(s => s.classList.toggle('active', s.dataset.theme === name));
+                localStorage.setItem('dunedle_theme', name);
+            }
+        };
+
+        /* --- CÓMO JUGAR --- */
+        const HowTo = {
+            show() {
+                const el = document.createElement('div');
+                el.className = 'modal-overlay';
+                el.id = 'howto-overlay';
+                el.onclick = (e) => { if(e.target === el) HowTo.close(); };
+                el.innerHTML = `
+                    <div class="modal-box">
+                        <h2>🏜️ Cómo jugar DUNEDLE</h2>
+                        <p>Cada día hay tres retos nuevos basados en el universo de Dune.</p>
+                        <h3>🟨 Palabra del día</h3>
+                        <p>Adivina la palabra en 6 intentos. Después de cada intento, las casillas cambian de color:</p>
+                        <div class="modal-legend">
+                            <span><span class="legend-box" style="background:var(--correct)"></span>letra correcta en su lugar</span>
+                            <span><span class="legend-box" style="background:var(--present)"></span>letra correcta, lugar equivocado</span>
+                            <span><span class="legend-box" style="background:var(--absent)"></span>letra no está en la palabra</span>
+                        </div>
+                        <h3>😀 Personaje del día</h3>
+                        <p>Se revela un emoji nuevo con cada intento fallido. Adivina el personaje antes de quedarte sin pistas.</p>
+                        <h3>💬 Frase del día</h3>
+                        <p>Lee la cita y adivina quién la dijo, con ayuda del buscador de nombres.</p>
+                        <p style="margin-top:0.8rem; color:var(--sand);">Todos los retos se reinician cada día a medianoche.</p>
+                        <button class="btn-action" onclick="HowTo.close()">ENTENDIDO</button>
+                    </div>
+                `;
+                document.body.appendChild(el);
+            },
+            close() {
+                const el = document.getElementById('howto-overlay');
+                if(el) el.remove();
+            },
+            maybeShowFirstTime() {
+                if(!localStorage.getItem('dunedle_howto_seen')){
+                    localStorage.setItem('dunedle_howto_seen', '1');
+                    this.show();
+                }
+            }
+        };
+
+        /* --- COMPARTIR RESULTADO --- */
+        const Share = {
+            async copy(text, btn) {
+                const original = btn.textContent;
+                try {
+                    await navigator.clipboard.writeText(text);
+                    btn.textContent = '✅ ¡Copiado!';
+                } catch(e) {
+                    btn.textContent = '⚠️ No se pudo copiar';
+                }
+                setTimeout(() => { btn.textContent = original; }, 1800);
+            },
+            wordleText(state) {
+                const rows = (state.statuses || []).map(st => st.map(s => s === 'correct' ? '🟩' : s === 'present' ? '🟨' : '⬛').join('')).join('\n');
+                return `DUNEDLE 🏜️ Palabra del día ${state.won ? state.guesses.length + '/6' : 'X/6'}\n\n${rows}`;
+            },
+            simpleText(gameName, won, attempts) {
+                return `DUNEDLE 🏜️ ${gameName} — ${won ? `acertado en ${attempts} intento${attempts === 1 ? '' : 's'} ✅` : 'no lo logré hoy ❌'}`;
+            }
+        };
+
+        window.onload = () => {
+            Spice.init(); Confetti.init(); ThemeManager.init(); SoundManager.init();
+            Router.go('home'); HowTo.maybeShowFirstTime();
+        };
+    </script>
+</body>
+
+</html>
