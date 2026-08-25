@@ -27,15 +27,17 @@
         body {
             background-color: var(--bg-black);
             color: var(--text-white);
-            height: 100vh;
-            overflow: hidden;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow-x: hidden;
         }
 
         #spice-canvas { position: fixed; top: 0; left: 0; z-index: -1; pointer-events: none; }
 
         header {
+            position: sticky;
+            top: 0;
             padding: 1rem;
             display: flex;
             justify-content: space-between;
@@ -96,14 +98,12 @@
         #confetti-canvas { position: fixed; top: 0; left: 0; z-index: 300; pointer-events: none; }
 
         #view-port {
-            flex: 1;
-            overflow-y: auto;
+            width: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 100%;
-            margin: 0 auto;
             padding: 1rem;
+            padding-bottom: 2.5rem;
         }
 
         /* --- Menú Principal --- */
@@ -191,6 +191,16 @@
         .hidden { display: none !important; }
         .shake { animation: shake 0.4s; }
         @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
+
+        @media (max-width: 380px) {
+            .logo { font-size: 1.4rem; letter-spacing: 3px; }
+            header { padding: 0.7rem; }
+            .icon-btn { width: 30px; height: 30px; font-size: 0.9rem; }
+            .header-side { min-width: 68px; gap: 0.35rem; }
+            .key { height: 44px; font-size: 0.8rem; }
+            .key-row { gap: 3px; }
+            .card { padding: 1.1rem; }
+        }
     </style>
 </head>
 <body>
@@ -222,17 +232,17 @@
             { word: "SHAI-HULUD", desc: "El gran gusano de arena, el Hacedor." },
             { word: "STILLSUIT", desc: "Prenda que recupera la humedad corporal." },
             { word: "GOM JABBAR", desc: "Aguja envenenada para pruebas de humanidad." },
-            { word: "BENE GESSERIT", desc: "Hermandad milenaria de control mental y genético." },
             { word: "MUAD'DIB", desc: "Nombre fremen de Paul: 'el ratón del desierto'." },
             { word: "SARDAUKAR", desc: "Los temibles soldados fanáticos del Emperador." },
             { word: "FEDAYKIN", desc: "Los comandos de la muerte fremen liderados por Paul." },
             { word: "MENTAT", desc: "Humano entrenado para pensar como una computadora." },
             { word: "LANDSRAAD", desc: "El consejo que reúne a todas las grandes casas nobles." },
-            { word: "KWISATZ HADERACH", desc: "El objetivo final del programa genético Bene Gesserit." },
             { word: "CHOAM", desc: "La compañía que controla el comercio de todo el Imperio." },
-            { word: "ORNITOPTERO", desc: "Aeronave de alas batientes usada para cruzar el desierto." },
             { word: "KANLY", desc: "Vendetta formal entre casas nobles, con reglas estrictas." },
-            { word: "SIETCH TABR", desc: "El hogar de Stilgar y su gente en las rocas de Arrakis." }
+            { word: "SIETCH", desc: "Refugio y hogar comunal de los fremen en la roca." },
+            { word: "HARKONNEN", desc: "La casa noble rival, enemiga jurada de los Atreides." },
+            { word: "ATREIDES", desc: "La casa noble del Duque Leto y su hijo Paul." },
+            { word: "CRYSKNIFE", desc: "Cuchillo ceremonial fremen tallado con diente de gusano." }
         ];
 
         const DUNEDATA_CHARACTERS = [
@@ -435,10 +445,11 @@
                 const grid = document.createElement('div');
                 grid.className = 'grid';
                 grid.style.gridTemplateColumns = `repeat(${this.target.length}, 1fr)`;
-                const availableWidth = Math.min(window.innerWidth - 32, 500);
-                const gap = 8;
+                const availableWidth = Math.min(document.documentElement.clientWidth - 32, 500);
+                const gap = this.target.length > 8 ? 5 : 8;
+                grid.style.gap = gap + 'px';
                 const rawSize = (availableWidth - gap * (this.target.length - 1)) / this.target.length;
-                const tileSize = Math.max(26, Math.min(65, rawSize));
+                const tileSize = Math.max(20, Math.min(65, rawSize));
                 grid.style.setProperty('--tile-size', tileSize + 'px');
                 for(let i=0; i<6; i++) {
                     const guess = this.state.guesses[i] || "";
