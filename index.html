@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>DUNEDLE — El Cántico de Frank Herbert</title>
+
     <style>
         :root {
             --sand: #c2b280;
@@ -97,6 +98,17 @@
 
         #confetti-canvas { position: fixed; top: 0; left: 0; z-index: 300; pointer-events: none; }
 
+        .sandworm { position: fixed; left: 0; width: 220px; height: 44px; z-index: -1; pointer-events: none; }
+        @keyframes sandwormCross {
+            0%   { transform: translate(-220px, 0px); opacity: 0; }
+            6%   { opacity: 0.35; }
+            25%  { transform: translate(25vw, -10px); }
+            50%  { transform: translate(50vw, 8px); }
+            75%  { transform: translate(75vw, -6px); }
+            94%  { opacity: 0.35; }
+            100% { transform: translate(calc(100vw + 220px), 0px); opacity: 0; }
+        }
+
         #view-port {
             width: 100%;
             display: flex;
@@ -184,6 +196,52 @@
         /* --- Paneles Finales --- */
         .victory-panel { text-align: center; padding: 1.5rem; width: 100%; max-width: 500px; animation: slideIn 0.5s; }
         .lore-box { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; text-align: left; margin: 15px 0; border-left: 4px solid var(--sand); line-height: 1.5; }
+        .meta-tags { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 10px 0 15px; }
+        .meta-tag { background: rgba(194,178,128,0.12); border: 1px solid var(--border-metal); color: var(--sand); font-size: 0.78rem; padding: 4px 10px; border-radius: 20px; }
+
+        .achv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin: 10px 0 20px; }
+        .achv-badge {
+            background: rgba(0,0,0,0.3); border: 1px solid var(--border-metal); border-radius: 10px;
+            padding: 14px 10px; text-align: center; opacity: 0.55; filter: grayscale(0.6);
+        }
+        .achv-badge.unlocked { opacity: 1; filter: none; border-color: var(--sand); background: rgba(194,178,128,0.08); }
+        .achv-icon { font-size: 1.8rem; margin-bottom: 6px; }
+        .achv-title { font-weight: bold; font-size: 0.85rem; color: var(--sand); margin-bottom: 3px; }
+        .achv-desc { font-size: 0.7rem; color: #999; line-height: 1.3; margin-bottom: 8px; min-height: 28px; }
+        .achv-progress { background: #222; border-radius: 6px; height: 6px; overflow: hidden; }
+        .achv-progress-fill { height: 100%; background: var(--correct); }
+        .achv-count { font-size: 0.7rem; color: #888; margin-top: 4px; }
+
+        .achv-toast {
+            position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
+            background: linear-gradient(145deg, var(--panel-gray), #111); border: 2px solid var(--sand);
+            border-radius: 12px; padding: 12px 20px; display: flex; align-items: center; gap: 12px;
+            z-index: 400; box-shadow: 0 8px 24px rgba(0,0,0,0.5); transition: top 0.4s ease;
+            max-width: 90vw;
+        }
+        .achv-toast.show { top: 16px; }
+        .achv-toast-icon { font-size: 1.8rem; }
+        .achv-toast-label { font-size: 0.7rem; color: var(--sand); letter-spacing: 0.5px; text-transform: uppercase; }
+        .achv-toast-title { font-weight: bold; color: var(--text-white); }
+
+        .char-table-wrap { width: 100%; overflow-x: auto; margin: 15px 0; padding-bottom: 8px; }
+        .char-grid { display: inline-grid; grid-auto-flow: row; grid-template-columns: 130px repeat(6, 100px); gap: 6px; min-width: 100%; }
+        .char-cell {
+            background: var(--panel-gray); border: 2px solid var(--border-metal); border-radius: 8px;
+            padding: 10px 6px; text-align: center; font-size: 0.75rem; line-height: 1.25;
+            transition: transform 0.22s ease-in, background-color 0.15s, border-color 0.15s, opacity 0.25s;
+            word-break: break-word; display: flex; align-items: center; justify-content: center;
+            transform: scale(1) rotateX(0deg); opacity: 1;
+        }
+        .char-cell.header-cell { background: transparent; border: none; color: var(--sand); font-size: 0.68rem; text-transform: uppercase; font-weight: bold; padding: 2px; }
+        .char-cell.name-cell { font-weight: bold; text-align: left; justify-content: flex-start; padding-left: 10px; background: rgba(194,178,128,0.08); }
+        .char-cell.pending { opacity: 0; transform: scale(0.85); }
+        .char-cell.flip { transform: rotateX(90deg); }
+        .char-cell.correct { background: var(--correct); border-color: var(--correct); color: #06240f; font-weight: bold; }
+        .char-cell.correct.pop { animation: cellPop 0.3s ease-out; }
+        .char-cell.wrong { background: #3a1414; border-color: #7a2323; color: #f2b8b8; }
+        .char-cell .arrow { font-size: 0.75rem; margin-left: 4px; opacity: 0.8; }
+        @keyframes cellPop { 0% { transform: scale(1); } 50% { transform: scale(1.12); } 100% { transform: scale(1); } }
         .countdown-timer { font-size: 1.8rem; font-weight: bold; color: var(--sand); display: block; margin: 10px 0; letter-spacing: 2px; }
         .btn-action { background: var(--sand); color: black; border: 0; padding: 15px; border-radius: 8px; font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; font-size: 1rem; }
         .btn-next { background: var(--spice); color: white; }
@@ -230,7 +288,7 @@
         const DUNEDATA_WORDS = [
             { word: "ARRAKIS", desc: "El planeta desierto, única fuente de la melange." },
             { word: "SHAI-HULUD", desc: "El gran gusano de arena, el Hacedor." },
-            { word: "STILLSUIT", desc: "Prenda que recupera la humedad corporal." },
+            { word: "DESTILTRAJE", desc: "Prenda que recupera la humedad corporal en el desierto." },
             { word: "GOM JABBAR", desc: "Aguja envenenada para pruebas de humanidad." },
             { word: "MUAD'DIB", desc: "Nombre fremen de Paul: 'el ratón del desierto'." },
             { word: "SARDAUKAR", desc: "Los temibles soldados fanáticos del Emperador." },
@@ -242,21 +300,21 @@
             { word: "SIETCH", desc: "Refugio y hogar comunal de los fremen en la roca." },
             { word: "HARKONNEN", desc: "La casa noble rival, enemiga jurada de los Atreides." },
             { word: "ATREIDES", desc: "La casa noble del Duque Leto y su hijo Paul." },
-            { word: "CRYSKNIFE", desc: "Cuchillo ceremonial fremen tallado con diente de gusano." }
+            { word: "CUCHILLO CRIS", desc: "Cuchillo ceremonial fremen tallado con diente de gusano." }
         ];
 
         const DUNEDATA_CHARACTERS = [
-            { name: "Paul Atreides", emojis: ["👑", "🏜️", "👁️", "🐭"], desc: "El Kwisatz Haderach y Mesías Fremen.", org: "Casa Atreides", planet: "Arrakis", first: "Dune" },
-            { name: "Leto Atreides", emojis: ["🐂", "💍", "🗡️", "🏛️"], desc: "El Duque Rojo, padre de Paul.", org: "Casa Atreides", planet: "Caladan", first: "Dune" },
-            { name: "Lady Jessica", emojis: ["👩‍🏫", "🧘", "🤰", "💧"], desc: "Reverenda Madre y madre de Paul.", org: "Bene Gesserit", planet: "Caladan", first: "Dune" },
-            { name: "Stilgar", emojis: ["🧔", "💧", "🏜️", "🛡️"], desc: "Naib del Sietch Tabr.", org: "Fremen", planet: "Arrakis", first: "Dune" },
-            { name: "Duncan Idaho", emojis: ["⚔️", "🔁", "💀", "🛡️"], desc: "El espadachín leal de los Atreides, más tarde resucitado como ghola.", org: "Casa Atreides", planet: "Caladan", first: "Dune" },
-            { name: "Gurney Halleck", emojis: ["🎸", "🗡️", "😠", "🤎"], desc: "Maestro de armas y trovador de la Casa Atreides.", org: "Casa Atreides", planet: "Caladan", first: "Dune" },
-            { name: "Barón Vladimir Harkonnen", emojis: ["🦈", "🛢️", "🖤", "👑"], desc: "El cruel y astuto señor de la Casa Harkonnen.", org: "Casa Harkonnen", planet: "Giedi Prime", first: "Dune" },
-            { name: "Feyd-Rautha", emojis: ["🗡️", "😈", "👑", "🩸"], desc: "El sobrino ambicioso y letal del Barón Harkonnen.", org: "Casa Harkonnen", planet: "Giedi Prime", first: "Dune" },
-            { name: "Chani", emojis: ["💧", "🏜️", "❤️", "🗡️"], desc: "Guerrera fremen y compañera de Paul.", org: "Fremen", planet: "Arrakis", first: "Dune" },
-            { name: "Liet-Kynes", emojis: ["🌱", "🏜️", "🔬", "🕊️"], desc: "Planetólogo imperial con lealtad secreta a los fremen.", org: "Fremen / Imperio", planet: "Arrakis", first: "Dune" },
-            { name: "Princesa Irulan", emojis: ["📜", "👑", "✍️", "💍"], desc: "Cronista imperial e hija del Emperador Shaddam IV.", org: "Casa Corrino", planet: "Kaitain", first: "Dune" }
+            { name: "Paul Atreides", emojis: ["👑", "🏜️", "👁️", "🐭"], desc: "El Kwisatz Haderach y Mesías Fremen.", org: "Casa Atreides", planet: "Arrakis", first: "Dune", gender: "Hombre", height: 180, hairColor: "Castaño", movie: "Ambas películas" },
+            { name: "Leto Atreides", emojis: ["🐂", "💍", "🗡️", "🏛️"], desc: "El Duque Rojo, padre de Paul.", org: "Casa Atreides", planet: "Caladan", first: "Dune", gender: "Hombre", height: 183, hairColor: "Negro", movie: "Solo Dune (2021)" },
+            { name: "Lady Jessica", emojis: ["👩‍🏫", "🧘", "🤰", "💧"], desc: "Reverenda Madre y madre de Paul.", org: "Bene Gesserit", planet: "Caladan", first: "Dune", gender: "Mujer", height: 170, hairColor: "Rubio bronce", movie: "Ambas películas" },
+            { name: "Stilgar", emojis: ["🧔", "💧", "🏜️", "🛡️"], desc: "Naib del Sietch Tabr.", org: "Fremen", planet: "Arrakis", first: "Dune", gender: "Hombre", height: 178, hairColor: "Negro", movie: "Ambas películas" },
+            { name: "Duncan Idaho", emojis: ["⚔️", "🔁", "💀", "🛡️"], desc: "El espadachín leal de los Atreides, más tarde resucitado como ghola.", org: "Casa Atreides", planet: "Caladan", first: "Dune", gender: "Hombre", height: 185, hairColor: "Negro rizado", movie: "Solo Dune (2021)" },
+            { name: "Gurney Halleck", emojis: ["🎸", "🗡️", "😠", "🤎"], desc: "Maestro de armas y trovador de la Casa Atreides.", org: "Casa Atreides", planet: "Caladan", first: "Dune", gender: "Hombre", height: 188, hairColor: "Rubio rojizo", movie: "Solo Parte Dos (2024)" },
+            { name: "Barón Vladimir Harkonnen", emojis: ["🦈", "🛢️", "🖤", "👑"], desc: "El cruel y astuto señor de la Casa Harkonnen.", org: "Casa Harkonnen", planet: "Giedi Prime", first: "Dune", gender: "Hombre", height: 160, hairColor: "Calvo", movie: "Solo Parte Dos (2024)" },
+            { name: "Feyd-Rautha", emojis: ["🗡️", "😈", "👑", "🩸"], desc: "El sobrino ambicioso y letal del Barón Harkonnen.", org: "Casa Harkonnen", planet: "Giedi Prime", first: "Dune", gender: "Hombre", height: 175, hairColor: "Castaño", movie: "Solo Parte Dos (2024)" },
+            { name: "Chani", emojis: ["💧", "🏜️", "❤️", "🗡️"], desc: "Guerrera fremen y compañera de Paul.", org: "Fremen", planet: "Arrakis", first: "Dune", gender: "Mujer", height: 160, hairColor: "Negro", movie: "Ambas películas" },
+            { name: "Liet-Kynes", emojis: ["🌱", "🏜️", "🔬", "🕊️"], desc: "Planetólogo imperial con lealtad secreta a los fremen.", org: "Fremen / Imperio", planet: "Arrakis", first: "Dune", gender: "Hombre", height: 180, hairColor: "Rubio", movie: "Solo Dune (2021)" },
+            { name: "Princesa Irulan", emojis: ["📜", "👑", "✍️", "💍"], desc: "Cronista imperial e hija del Emperador Shaddam IV.", org: "Casa Corrino", planet: "Kaitain", first: "Dune", gender: "Mujer", height: 172, hairColor: "Rubio dorado", movie: "Solo Parte Dos (2024)" }
         ];
 
         const DUNEDATA_QUOTES = [
@@ -280,7 +338,7 @@
         /* --- MOTOR DIARIO --- */
         const Daily = {
             getSeed() { return new Date().getFullYear() * 10000 + (new Date().getMonth() + 1) * 100 + new Date().getDate(); },
-            getIndex(arr) { return this.getSeed() % arr.length; },
+            getIndex(arr, offset) { return (this.getSeed() + (offset || 0)) % arr.length; },
             getState(key) {
                 const s = localStorage.getItem('dunedle_' + key);
                 if(!s) return { finished: false, won: false, history: [], seed: this.getSeed() };
@@ -295,13 +353,32 @@
             }
         };
 
-        /* --- ESTADÍSTICAS --- */
+        /* --- ESTADÍSTICAS Y LOGROS --- */
         function todayStr() { return new Date().toISOString().slice(0, 10); }
         function daysBetween(dateStr) {
             const last = new Date(dateStr + 'T00:00:00');
             const now = new Date(); now.setHours(0, 0, 0, 0);
             return Math.round((now - last) / 86400000);
         }
+
+        const ACHIEVEMENTS = [
+            { id: 'wordle_5',  game: 'wordle', threshold: 5,  icon: '🏜️', title: 'Aprendiz del Desierto', desc: 'Acierta 5 palabras del día.' },
+            { id: 'wordle_15', game: 'wordle', threshold: 15, icon: '🐫', title: 'Guía Fremen',            desc: 'Acierta 15 palabras del día.' },
+            { id: 'wordle_30', game: 'wordle', threshold: 30, icon: '👑', title: 'Maestro de Arrakis',     desc: 'Acierta 30 palabras del día.' },
+            { id: 'emoji_5',   game: 'emoji',  threshold: 5,  icon: '👁️', title: 'Observador',             desc: 'Identifica 5 personajes por emojis.' },
+            { id: 'emoji_15',  game: 'emoji',  threshold: 15, icon: '🎭', title: 'Reconocedor',            desc: 'Identifica 15 personajes por emojis.' },
+            { id: 'emoji_30',  game: 'emoji',  threshold: 30, icon: '🧠', title: 'Sabio del Imperio',      desc: 'Identifica 30 personajes por emojis.' },
+            { id: 'quote_5',   game: 'quote',  threshold: 5,  icon: '📜', title: 'Aprendiz de Irulan',     desc: 'Acierta 5 frases del día.' },
+            { id: 'quote_15',  game: 'quote',  threshold: 15, icon: '✍️', title: 'Cronista',               desc: 'Acierta 15 frases del día.' },
+            { id: 'quote_30',  game: 'quote',  threshold: 30, icon: '📚', title: 'Historiador Imperial',   desc: 'Acierta 30 frases del día.' },
+            { id: 'character_5',  game: 'character', threshold: 5,  icon: '🔍', title: 'Investigador',        desc: 'Acierta 5 veces en ¿Quién es?' },
+            { id: 'character_15', game: 'character', threshold: 15, icon: '🕵️', title: 'Detective de Arrakis', desc: 'Acierta 15 veces en ¿Quién es?' },
+            { id: 'character_30', game: 'character', threshold: 30, icon: '🧬', title: 'Genetista Imperial',   desc: 'Acierta 30 veces en ¿Quién es?' },
+            { id: 'total_10',  game: 'total',  threshold: 10, icon: '⭐', title: 'Iniciado',               desc: 'Acierta 10 retos en total, entre los cuatro juegos.' },
+            { id: 'total_30',  game: 'total',  threshold: 30, icon: '🌟', title: 'Adepto',                 desc: 'Acierta 30 retos en total, entre los cuatro juegos.' },
+            { id: 'total_60',  game: 'total',  threshold: 60, icon: '🏆', title: 'Leyenda de Dunedle',     desc: 'Acierta 60 retos en total, entre los cuatro juegos.' }
+        ];
+
         const StatsManager = {
             key(game) { return 'dunedle_stats_' + game; },
             get(game) {
@@ -312,8 +389,11 @@
                 return s;
             },
             save(game, s) { localStorage.setItem(this.key(game), JSON.stringify(s)); },
+            getTotalWins() { return this.get('wordle').wins + this.get('emoji').wins + this.get('quote').wins + this.get('character').wins; },
             record(game, won, attempts) {
+                const beforeTotal = this.getTotalWins();
                 const s = this.get(game);
+                const prevWins = s.wins;
                 s.played++;
                 if(won) {
                     s.wins++;
@@ -330,6 +410,15 @@
                 }
                 s.lastDate = todayStr();
                 this.save(game, s);
+
+                if(won) {
+                    const afterTotal = this.getTotalWins();
+                    ACHIEVEMENTS.filter(a => {
+                        if(a.game === game) return prevWins < a.threshold && s.wins >= a.threshold;
+                        if(a.game === 'total') return beforeTotal < a.threshold && afterTotal >= a.threshold;
+                        return false;
+                    }).forEach(a => AchievementToast.show(a));
+                }
             }
         };
         function statRow(s) {
@@ -348,6 +437,7 @@
                 const w = StatsManager.get('wordle');
                 const e = StatsManager.get('emoji');
                 const q = StatsManager.get('quote');
+                const c = StatsManager.get('character');
                 const maxDist = Math.max(1, ...w.distribution);
                 const distBars = w.distribution.map((count, i) => `
                     <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
@@ -374,9 +464,65 @@
                             <h2>💬 Frase del día</h2>
                             ${statRow(q)}
                         </div>
+                        <div class="card" style="cursor:default;">
+                            <h2>🕵️ ¿Quién es?</h2>
+                            ${statRow(c)}
+                        </div>
+                        <button class="btn-action" onclick="Router.go('achievements')">🏆 VER LOGROS</button>
                         <button class="btn-action" onclick="Router.go('home')">INICIO</button>
                     </div>
                 `;
+            }
+        };
+
+        const AchievementsView = {
+            render(container) {
+                const cards = ACHIEVEMENTS.map(a => {
+                    const progress = a.game === 'total' ? StatsManager.getTotalWins() : StatsManager.get(a.game).wins;
+                    const unlocked = progress >= a.threshold;
+                    const pct = Math.min(100, Math.round((progress / a.threshold) * 100));
+                    return `
+                        <div class="achv-badge ${unlocked ? 'unlocked' : ''}">
+                            <div class="achv-icon">${unlocked ? a.icon : '🔒'}</div>
+                            <div class="achv-title">${a.title}</div>
+                            <div class="achv-desc">${a.desc}</div>
+                            <div class="achv-progress"><div class="achv-progress-fill" style="width:${pct}%"></div></div>
+                            <div class="achv-count">${Math.min(progress, a.threshold)}/${a.threshold}</div>
+                        </div>
+                    `;
+                }).join('');
+                container.innerHTML = `
+                    <div class="home-menu" style="max-width:560px;">
+                        <h2 style="color:var(--sand); text-align:center; margin-bottom:0.2rem;">🏆 Logros</h2>
+                        <p style="text-align:center; color:#999; font-size:0.85rem; margin-bottom:0.5rem;">Se van desbloqueando a medida que aciertas retos.</p>
+                        <div class="achv-grid">${cards}</div>
+                        <button class="btn-action" onclick="Router.go('stats')">📊 ESTADÍSTICAS</button>
+                        <button class="btn-action" onclick="Router.go('home')">INICIO</button>
+                    </div>
+                `;
+            }
+        };
+
+        const AchievementToast = {
+            show(a) {
+                SoundManager.win();
+                Haptics.win();
+                Confetti.burst();
+                const el = document.createElement('div');
+                el.className = 'achv-toast';
+                el.innerHTML = `
+                    <div class="achv-toast-icon">${a.icon}</div>
+                    <div>
+                        <div class="achv-toast-label">¡Logro desbloqueado!</div>
+                        <div class="achv-toast-title">${a.title}</div>
+                    </div>
+                `;
+                document.body.appendChild(el);
+                requestAnimationFrame(() => el.classList.add('show'));
+                setTimeout(() => {
+                    el.classList.remove('show');
+                    setTimeout(() => el.remove(), 400);
+                }, 3500);
             }
         };
 
@@ -409,19 +555,24 @@
                 else if(view === 'wordle') WordleGame.init(port);
                 else if(view === 'emojis') EmojiGame.init(port);
                 else if(view === 'quotes') QuoteGame.init(port);
+                else if(view === 'whois') CharacterGuessGame.init(port);
                 else if(view === 'stats') StatsView.render(port);
+                else if(view === 'achievements') AchievementsView.render(port);
             },
             renderHome(container) {
                 const sW = Daily.getState('wordle');
                 const sE = Daily.getState('emoji');
                 const sQ = Daily.getState('quote');
+                const sC = Daily.getState('character');
                 const getBadge = (s) => !s.finished ? '⏳' : (s.won ? '✅' : '❌');
                 container.innerHTML = `
                     <div class="home-menu">
                         <div class="card" onclick="Router.go('wordle')"><h2>🟨 Palabra del día</h2><p>El reto clásico.</p><span class="status-badge">${getBadge(sW)}</span></div>
                         <div class="card" onclick="Router.go('emojis')"><h2>😀 Personaje del día</h2><p>Identifica símbolos.</p><span class="status-badge">${getBadge(sE)}</span></div>
                         <div class="card" onclick="Router.go('quotes')"><h2>💬 Frase del día</h2><p>¿Quién lo dijo?</p><span class="status-badge">${getBadge(sQ)}</span></div>
+                        <div class="card" onclick="Router.go('whois')"><h2>🕵️ ¿Quién es?</h2><p>Compara datos y adivina.</p><span class="status-badge">${getBadge(sC)}</span></div>
                         <div class="card" onclick="Router.go('stats')"><h2>📊 Estadísticas</h2><p>Tu progreso en Dunedle.</p></div>
+                        <div class="card" onclick="Router.go('achievements')"><h2>🏆 Logros</h2><p>Desbloquea insignias jugando.</p></div>
                     </div>
                 `;
             }
@@ -429,7 +580,7 @@
 
         /* --- WORDLE --- */
         const WordleGame = {
-            target: "", desc: "", state: null, current: "",
+            target: "", desc: "", state: null, current: "", isSubmitting: false,
             init(container) {
                 const data = DUNEDATA_WORDS[Daily.getIndex(DUNEDATA_WORDS)];
                 this.target = data.word.toUpperCase();
@@ -541,6 +692,7 @@
                 };
             },
             handleInput(k) {
+                if(this.isSubmitting || this.state.finished) return;
                 const cleanLen = this.target.replace(/[^A-ZÑ]/g, '').length;
                 if(k === "ENTER") this.submit();
                 else if(k === "⌫") { this.current = this.current.slice(0, -1); this.updateGrid(); }
@@ -557,8 +709,10 @@
                 }
             },
             async submit() {
+                if(this.isSubmitting || this.state.finished) return;
                 const cleanTarget = this.target.replace(/[^A-ZÑ]/g, '');
                 if(this.current.length !== cleanTarget.length) return;
+                this.isSubmitting = true;
                 let fullGuess = ""; let cPtr = 0;
                 for(let i=0; i<this.target.length; i++){
                     if(["'","-"," "].includes(this.target[i])) fullGuess += this.target[i];
@@ -576,21 +730,25 @@
                     const status = statuses[sPtr]; sPtr++;
                     t.classList.add('flip'); await new Promise(r => setTimeout(r, 100));
                     t.classList.add(status);
-                    if(status === 'correct') SoundManager.correct();
-                    else if(status === 'present') SoundManager.present();
-                    else SoundManager.absent();
+                    if(status === 'correct') { SoundManager.correct(); Haptics.correct(); }
+                    else if(status === 'present') { SoundManager.present(); Haptics.present(); }
+                    else { SoundManager.absent(); Haptics.absent(); }
                 }
                 this.updateKeyboardColors();
                 if(fullGuess === this.target) { this.state.finished = true; this.state.won = true; }
                 else if(this.state.guesses.length >= 6) { this.state.finished = true; this.state.won = false; }
                 if(this.state.finished) {
-                    setTimeout(() => { if(this.state.won) SoundManager.win(); else SoundManager.wrong(); }, 350);
+                    setTimeout(() => {
+                        if(this.state.won) { SoundManager.win(); Haptics.win(); }
+                        else { SoundManager.wrong(); Haptics.wrong(); }
+                    }, 350);
                 }
                 if(this.state.finished && !this.state.statsRecorded) {
                     StatsManager.record('wordle', this.state.won, this.state.guesses.length);
                     this.state.statsRecorded = true;
                 }
                 Daily.saveState('wordle', this.state); this.current = "";
+                this.isSubmitting = false;
                 if(this.state.finished) setTimeout(() => this.render(document.getElementById('view-port')), 500);
             },
             renderFinal(container) {
@@ -598,7 +756,7 @@
                     <div class="victory-panel">
                         <h2 style="color:${this.state.won?'var(--correct)':'#ef4444'}">${this.state.won?'¡Misión Cumplida!':'El desierto vence'}</h2>
                         <h1>${this.target}</h1><div class="lore-box">${this.desc}</div>
-                        <button class="share-btn" onclick="WordleGame.share(this)">📋 Compartir resultado</button>
+                        <button class="share-btn" onclick="WordleGame.share()">📸 Compartir resultado</button>
                         <p>Próximo reto en:</p><span class="countdown-timer">00 h 00 min 00 s</span>
                         ${renderFlowButtons('wordle')}
                     </div>
@@ -606,7 +764,7 @@
                 TimerSystem.start();
                 if(this.state.won) Confetti.burst();
             },
-            share(btn) { Share.copy(Share.wordleText(this.state), btn); }
+            share() { ShareCard.preview(ShareCard.wordleImage(this.state, this.target), 'dunedle-palabra.png', Share.wordleText(this.state)); }
         };
 
         /* --- EMOJIS --- */
@@ -622,8 +780,14 @@
                         <div class="victory-panel">
                             <h2 style="color:var(--correct)">IDENTIFICADO</h2>
                             <div style="font-size:3rem; margin:20px 0;">${this.target.emojis.join(' ')}</div>
-                            <h1>${this.target.name}</h1><div class="lore-box">${this.target.desc}</div>
-                            <button class="share-btn" onclick="EmojiGame.share(this)">📋 Compartir resultado</button>
+                            <h1>${this.target.name}</h1>
+                            <div class="meta-tags">
+                                <span class="meta-tag">🏛️ ${this.target.org}</span>
+                                <span class="meta-tag">🪐 ${this.target.planet}</span>
+                                <span class="meta-tag">📖 ${this.target.first}</span>
+                            </div>
+                            <div class="lore-box">${this.target.desc}</div>
+                            <button class="share-btn" onclick="EmojiGame.share()">📸 Compartir resultado</button>
                             <p>Próximo en:</p><span class="countdown-timer">00 h 00 min 00 s</span>
                             ${renderFlowButtons('emoji')}
                         </div>
@@ -642,31 +806,17 @@
                 this.setupSearch();
             },
             setupSearch() {
-                const input = document.getElementById('e-input');
-                const sugg = document.getElementById('e-sugg');
-                input.oninput = () => {
-                    const val = input.value.toLowerCase(); sugg.innerHTML = "";
-                    if(!val) { sugg.style.display="none"; return; }
-                    const matches = DUNEDATA_CHARACTERS.map(c=>c.name).filter(n => n.toLowerCase().includes(val)).slice(0,5);
-                    if(matches.length){
-                        sugg.style.display="block";
-                        matches.forEach(m => {
-                            const d = document.createElement('div'); d.className="suggestion-item"; d.textContent=m;
-                            d.onclick = () => { input.value = m; sugg.style.display="none"; this.check(); };
-                            sugg.appendChild(d);
-                        });
-                    }
-                };
+                setupNameSearch('e-input', 'e-sugg', DUNEDATA_CHARACTERS.map(c => c.name), () => this.check());
             },
             check() {
                 const val = document.getElementById('e-input').value.trim();
                 if(!val) return;
-                if(val.toLowerCase() === this.target.name.toLowerCase()){
+                if(isAcceptableAnswer(val, this.target.name, DUNEDATA_CHARACTERS.map(c => c.name))){
                     this.state.finished = true; this.state.won = true;
-                    SoundManager.win();
+                    SoundManager.win(); Haptics.win();
                 } else {
                     this.state.history.unshift(val);
-                    SoundManager.wrong();
+                    SoundManager.wrong(); Haptics.wrong();
                 }
                 if(this.state.finished && !this.state.statsRecorded) {
                     StatsManager.record('emoji', true, this.state.history.length + 1);
@@ -674,7 +824,10 @@
                 }
                 Daily.saveState('emoji', this.state); this.render(document.getElementById('view-port'));
             },
-            share(btn) { Share.copy(Share.simpleText('Personaje del día', true, this.state.history.length + 1), btn); }
+            share() {
+                const attempts = this.state.history.length + 1;
+                ShareCard.preview(ShareCard.emojiImage(this.target, attempts, true), 'dunedle-personaje.png', Share.simpleText('Personaje del día', true, attempts));
+            }
         };
 
         /* --- FRASES --- */
@@ -691,7 +844,7 @@
                             <h2 style="color:var(--correct)">SABIDURÍA RECONOCIDA</h2>
                             <p style="font-style:italic; margin:1rem 0;">"${this.target.text}"</p>
                             <h1>${this.target.char}</h1><div class="lore-box">${this.target.context}</div>
-                            <button class="share-btn" onclick="QuoteGame.share(this)">📋 Compartir resultado</button>
+                            <button class="share-btn" onclick="QuoteGame.share()">📸 Compartir resultado</button>
                             <p>Próximo en:</p><span class="countdown-timer">00 h 00 min 00 s</span>
                             ${renderFlowButtons('quote')}
                         </div>
@@ -710,31 +863,17 @@
                 this.setupSearch();
             },
             setupSearch() {
-                const input = document.getElementById('q-input');
-                const sugg = document.getElementById('q-sugg');
-                input.oninput = () => {
-                    const val = input.value.toLowerCase(); sugg.innerHTML = "";
-                    if(!val) { sugg.style.display="none"; return; }
-                    const matches = DUNEDATA_ALL_NAMES.filter(n => n.toLowerCase().includes(val)).slice(0,5);
-                    if(matches.length){
-                        sugg.style.display="block";
-                        matches.forEach(m => {
-                            const d = document.createElement('div'); d.className="suggestion-item"; d.textContent=m;
-                            d.onclick = () => { input.value = m; sugg.style.display="none"; this.check(); };
-                            sugg.appendChild(d);
-                        });
-                    }
-                };
+                setupNameSearch('q-input', 'q-sugg', DUNEDATA_ALL_NAMES, () => this.check());
             },
             check() {
                 const val = document.getElementById('q-input').value.trim();
                 if(!val) return;
-                if(val.toLowerCase() === this.target.char.toLowerCase()){
+                if(isAcceptableAnswer(val, this.target.char, DUNEDATA_ALL_NAMES)){
                     this.state.finished = true; this.state.won = true;
-                    SoundManager.win();
+                    SoundManager.win(); Haptics.win();
                 } else {
                     this.state.history.unshift(val);
-                    SoundManager.wrong();
+                    SoundManager.wrong(); Haptics.wrong();
                 }
                 if(this.state.finished && !this.state.statsRecorded) {
                     StatsManager.record('quote', true, this.state.history.length + 1);
@@ -742,17 +881,244 @@
                 }
                 Daily.saveState('quote', this.state); this.render(document.getElementById('view-port'));
             },
-            share(btn) { Share.copy(Share.simpleText('Frase del día', true, this.state.history.length + 1), btn); }
+            share() {
+                const attempts = this.state.history.length + 1;
+                ShareCard.preview(ShareCard.quoteImage(this.target, attempts, true), 'dunedle-frase.png', Share.simpleText('Frase del día', true, attempts));
+            }
         };
 
+        const CharacterGuessGame = {
+            target: null, state: null, isSubmitting: false,
+            fields: [
+                { key: 'gender', label: 'Género' },
+                { key: 'height', label: 'Altura', numeric: true },
+                { key: 'org', label: 'Facción' },
+                { key: 'hairColor', label: 'Pelo' },
+                { key: 'movie', label: 'Película' },
+                { key: 'first', label: 'Libro' }
+            ],
+            init(container) {
+                this.target = DUNEDATA_CHARACTERS[Daily.getIndex(DUNEDATA_CHARACTERS, 7)];
+                this.state = Daily.getState('character');
+                if(!this.state.rows) this.state.rows = [];
+                this.isSubmitting = false;
+                this.render(container);
+            },
+            render(container) {
+                if(this.state.finished) {
+                    container.innerHTML = `
+                        <div class="victory-panel">
+                            <h2 style="color:var(--correct)">IDENTIFICADO</h2>
+                            <h1>${this.target.name}</h1>
+                            <div class="meta-tags">
+                                <span class="meta-tag">🏛️ ${this.target.org}</span>
+                                <span class="meta-tag">🪐 ${this.target.planet}</span>
+                                <span class="meta-tag">📖 ${this.target.first}</span>
+                            </div>
+                            <div class="lore-box">${this.target.desc}</div>
+                            <button class="share-btn" onclick="CharacterGuessGame.share()">📸 Compartir resultado</button>
+                            <p>Próximo en:</p><span class="countdown-timer">00 h 00 min 00 s</span>
+                            <div class="char-table-wrap">${this.tableHTML()}</div>
+                            ${renderFlowButtons('character')}
+                        </div>
+                    `;
+                    TimerSystem.start(); Confetti.burst(); return;
+                }
+                container.innerHTML = `
+                    <div class="victory-panel">
+                        <h2>¿QUIÉN ES?</h2>
+                        <p style="color:#999; font-size:0.85rem; margin:8px 0 15px;">Escribe un nombre. Compararemos sus datos con el personaje del día.</p>
+                        <div class="input-group" style="margin:0 auto"><input type="text" id="c-input" placeholder="Nombre..." autocomplete="off"><div id="c-sugg" class="suggestions"></div></div>
+                        <button class="btn-action" id="c-check-btn" onclick="CharacterGuessGame.check()">COMPROBAR</button>
+                        <p id="c-error" style="color:#ef4444; font-size:0.8rem; min-height:1.2rem; margin-top:6px;"></p>
+                        <div class="char-table-wrap">${this.tableHTML()}</div>
+                    </div>
+                `;
+                setupNameSearch('c-input', 'c-sugg', DUNEDATA_CHARACTERS.map(c => c.name), () => this.check());
+                document.getElementById('c-input').focus();
+            },
+            tableHTML() {
+                const headers = ['Personaje', ...this.fields.map(f => f.label)];
+                const headerCells = headers.map(h => `<div class="char-cell header-cell">${h}</div>`).join('');
+                const rowCells = this.state.rows.map(row => this.rowHTML(row)).join('');
+                return `<div class="char-grid" id="c-grid">${headerCells}${rowCells}</div>`;
+            },
+            rowHTML(row) {
+                const cells = row.cells.map(c => `<div class="char-cell ${c.status}">${c.value}${c.arrow ? ' <span class="arrow">' + c.arrow + '</span>' : ''}</div>`).join('');
+                return `<div class="char-cell name-cell">${row.name}</div>${cells}`;
+            },
+            findCharacter(guessRaw) {
+                const resolved = resolveNameGuess(guessRaw, DUNEDATA_CHARACTERS.map(c => c.name));
+                if(!resolved) return null;
+                return DUNEDATA_CHARACTERS.find(c => c.name === resolved) || null;
+            },
+            buildRow(guessed) {
+                const cells = this.fields.map(f => {
+                    const gv = guessed[f.key], tv = this.target[f.key];
+                    if(f.numeric){
+                        const status = gv === tv ? 'correct' : 'wrong';
+                        return { value: gv + ' cm', status, arrow: gv === tv ? '' : (gv > tv ? '↓' : '↑') };
+                    }
+                    const status = String(gv).toLowerCase() === String(tv).toLowerCase() ? 'correct' : 'wrong';
+                    return { value: gv, status };
+                });
+                return { name: guessed.name, cells, won: guessed.name === this.target.name };
+            },
+            showError(msg) {
+                const el = document.getElementById('c-error');
+                if(!el) return;
+                el.textContent = msg;
+                setTimeout(() => { if(el.textContent === msg) el.textContent = ''; }, 2500);
+            },
+            revealCell(cell, c, delay) {
+                return new Promise(resolve => {
+                    setTimeout(() => {
+                        cell.classList.add('flip');
+                        setTimeout(() => {
+                            cell.textContent = c.value + (c.arrow ? ' ' + c.arrow : '');
+                            cell.classList.remove('flip');
+                            cell.classList.add(c.status);
+                            if(c.status === 'correct'){
+                                cell.classList.add('pop');
+                                SoundManager.correct(); Haptics.correct();
+                            } else {
+                                SoundManager.absent(); Haptics.absent();
+                            }
+                            setTimeout(resolve, 220);
+                        }, 220);
+                    }, delay);
+                });
+            },
+            async check() {
+                if(this.isSubmitting || this.state.finished) return;
+                const input = document.getElementById('c-input');
+                const val = input.value.trim();
+                if(!val) return;
+                const guessed = this.findCharacter(val);
+                if(!guessed){ this.showError('Ese personaje no está en la base de datos.'); return; }
+                if(this.state.rows.some(r => r.name === guessed.name)){ this.showError('Ya has probado con ese personaje.'); return; }
+
+                this.isSubmitting = true;
+                document.getElementById('c-sugg').style.display = 'none';
+                input.value = ''; input.disabled = true;
+
+                const row = this.buildRow(guessed);
+                const grid = document.getElementById('c-grid');
+                const anchor = grid.children[headersCount(this)] || null;
+
+                const nameCell = document.createElement('div');
+                nameCell.className = 'char-cell name-cell pending';
+                nameCell.textContent = row.name;
+                grid.insertBefore(nameCell, anchor);
+                requestAnimationFrame(() => nameCell.classList.remove('pending'));
+                let prev = nameCell;
+
+                const cellEls = row.cells.map(() => {
+                    const cell = document.createElement('div');
+                    cell.className = 'char-cell';
+                    prev.after(cell); prev = cell;
+                    return cell;
+                });
+
+                await Promise.all(row.cells.map((c, i) => this.revealCell(cellEls[i], c, i * 160)));
+
+                this.state.rows.unshift(row);
+                input.disabled = false; input.focus();
+                this.isSubmitting = false;
+
+                if(row.won){
+                    this.state.finished = true; this.state.won = true;
+                    setTimeout(() => { SoundManager.win(); Haptics.win(); }, 150);
+                } else {
+                    SoundManager.wrong(); Haptics.wrong();
+                }
+                if(this.state.finished && !this.state.statsRecorded){
+                    StatsManager.record('character', true, this.state.rows.length);
+                    this.state.statsRecorded = true;
+                }
+                Daily.saveState('character', this.state);
+                if(this.state.finished) setTimeout(() => this.render(document.getElementById('view-port')), 500);
+            },
+            share() {
+                const attempts = this.state.rows.length;
+                ShareCard.preview(ShareCard.emojiImage(this.target, attempts, true), 'dunedle-quien-es.png', Share.simpleText('¿Quién es?', true, attempts));
+            }
+        };
+        function headersCount(game) { return game.fields.length + 1; }
+
         function renderFlowButtons(current) {
-            const sW = Daily.getState('wordle'), sE = Daily.getState('emoji'), sQ = Daily.getState('quote');
-            if(sW.finished && sE.finished && sQ.finished) return `<p style="color:var(--sand); margin-top:20px;">¡Has completado todo por hoy!</p><button class="btn-action" onclick="Router.go('home')">INICIO</button>`;
+            const sW = Daily.getState('wordle'), sE = Daily.getState('emoji'), sQ = Daily.getState('quote'), sC = Daily.getState('character');
+            if(sW.finished && sE.finished && sQ.finished && sC.finished) return `<p style="color:var(--sand); margin-top:20px;">¡Has completado todo por hoy!</p><button class="btn-action" onclick="Router.go('home')">INICIO</button>`;
             let b = `<p style="margin-top:20px;">Retos pendientes:</p>`;
             if(!sW.finished && current !== 'wordle') b += `<button class="btn-action btn-next" onclick="Router.go('wordle')">➡️ Palabra</button>`;
             if(!sE.finished && current !== 'emoji') b += `<button class="btn-action btn-next" onclick="Router.go('emojis')">➡️ Personaje</button>`;
             if(!sQ.finished && current !== 'quote') b += `<button class="btn-action btn-next" onclick="Router.go('quotes')">➡️ Frase</button>`;
+            if(!sC.finished && current !== 'character') b += `<button class="btn-action btn-next" onclick="Router.go('whois')">➡️ ¿Quién es?</button>`;
             return b + `<button class="btn-action" onclick="Router.go('home')">INICIO</button>`;
+        }
+
+        // Busca por inicio de palabra: prioriza nombres/apellidos que EMPIEZAN por lo escrito,
+        // en vez de cualquier nombre que simplemente contenga esa letra en cualquier parte.
+        function smartNameSearch(names, query, limit) {
+            const val = query.toLowerCase().trim();
+            if(!val) return [];
+            const fullMatches = [];
+            const wordMatches = [];
+            names.forEach(n => {
+                const lower = n.toLowerCase();
+                if(lower.startsWith(val)) fullMatches.push(n);
+                else if(lower.split(/[\s-]+/).some(w => w.startsWith(val))) wordMatches.push(n);
+            });
+            return [...fullMatches, ...wordMatches].slice(0, limit || 5);
+        }
+
+        function setupNameSearch(inputId, suggId, source, onCheck) {
+            const input = document.getElementById(inputId);
+            const sugg = document.getElementById(suggId);
+            input.oninput = () => {
+                sugg.innerHTML = "";
+                const matches = smartNameSearch(source, input.value, 5);
+                if(matches.length){
+                    sugg.style.display = "block";
+                    matches.forEach(m => {
+                        const d = document.createElement('div'); d.className = "suggestion-item"; d.textContent = m;
+                        d.onclick = () => { input.value = m; sugg.style.display = "none"; onCheck(); };
+                        sugg.appendChild(d);
+                    });
+                } else {
+                    sugg.style.display = "none";
+                }
+            };
+            input.onkeydown = (e) => {
+                if(e.key === 'Enter'){ e.preventDefault(); sugg.style.display = "none"; onCheck(); }
+            };
+        }
+
+        // Acepta el nombre completo o solo el primer nombre/palabra (ej. "Paul" para "Paul Atreides"),
+        // pero solo si esa primera palabra no es ambigua entre dos entradas distintas de la lista.
+        // Resuelve un nombre escrito por el usuario contra una lista de nombres válidos.
+        // Acepta el nombre completo, o CUALQUIER palabra individual del nombre (no solo la primera),
+        // pero solo si esa palabra no se repite en ninguna otra entrada de la lista (si no, es ambigua
+        // y hay que escribir el nombre completo para desempatar).
+        function resolveNameGuess(guess, names) {
+            const g = guess.trim().toLowerCase();
+            if(!g) return null;
+            const exact = names.find(n => n.trim().toLowerCase() === g);
+            if(exact) return exact;
+            const owners = {};
+            names.forEach(n => {
+                n.trim().toLowerCase().split(/[\s-]+/).forEach(word => {
+                    if(!owners[word]) owners[word] = new Set();
+                    owners[word].add(n);
+                });
+            });
+            if(owners[g] && owners[g].size === 1) return [...owners[g]][0];
+            return null;
+        }
+
+        function isAcceptableAnswer(guess, targetName, allNames) {
+            const resolved = resolveNameGuess(guess, allNames);
+            return !!resolved && resolved.trim().toLowerCase() === targetName.trim().toLowerCase();
         }
 
         const Spice = {
@@ -812,7 +1178,47 @@
             }
         };
 
+        /* --- GUSANO DE ARENA (easter egg) --- */
+        const Sandworm = {
+            trigger() {
+                if(document.querySelector('.sandworm')) return;
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.setAttribute('viewBox', '0 0 220 44');
+                svg.classList.add('sandworm');
+                svg.style.bottom = (8 + Math.random() * 45) + 'vh';
+                const duration = 9 + Math.random() * 5;
+                svg.style.animation = `sandwormCross ${duration}s linear forwards`;
+                svg.innerHTML = `
+                    <path d="M4,22 Q30,6 56,22 T108,22 T160,22 T212,22" stroke="#8a6a3a" stroke-width="9" fill="none" stroke-linecap="round" opacity="0.85"/>
+                    <circle cx="212" cy="22" r="6" fill="#8a6a3a" opacity="0.85"/>
+                `;
+                document.body.appendChild(svg);
+                svg.addEventListener('animationend', () => svg.remove());
+            },
+            schedule() {
+                const delay = 50000 + Math.random() * 70000; // entre 50s y 2min
+                setTimeout(() => {
+                    if(Math.random() < 0.55) this.trigger();
+                    this.schedule();
+                }, delay);
+            }
+        };
+
         /* --- SONIDO --- */
+        /* --- VIBRACIÓN TÁCTIL --- */
+        const Haptics = {
+            supported: typeof navigator !== 'undefined' && 'vibrate' in navigator,
+            tap(pattern) {
+                if(!this.supported) return;
+                try { navigator.vibrate(pattern); } catch(e) {}
+            },
+            correct() { this.tap(12); },
+            present() { this.tap(8); },
+            absent() { this.tap(4); },
+            win() { this.tap([20, 30, 20, 30, 50]); },
+            wrong() { this.tap([15, 40, 15]); }
+        };
+
         const SoundManager = {
             ctx: null,
             muted: false,
@@ -909,6 +1315,8 @@
                         <p>Se revela un emoji nuevo con cada intento fallido. Adivina el personaje antes de quedarte sin pistas.</p>
                         <h3>💬 Frase del día</h3>
                         <p>Lee la cita y adivina quién la dijo, con ayuda del buscador de nombres.</p>
+                        <h3>🕵️ ¿Quién es?</h3>
+                        <p>Escribe un nombre y compara sus datos (género, altura, facción, pelo, película, libro) con el personaje del día. En verde lo que coincide, en rojo lo que no. La altura además te indica con una flecha si el personaje objetivo es más alto o más bajo.</p>
                         <p style="margin-top:0.8rem; color:var(--sand);">Todos los retos se reinician cada día a medianoche.</p>
                         <button class="btn-action" onclick="HowTo.close()">ENTENDIDO</button>
                     </div>
@@ -948,9 +1356,155 @@
             }
         };
 
+        /* --- TARJETA VISUAL DE COMPARTIR --- */
+        const ShareCard = {
+            color(varName, fallback) {
+                const v = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+                return v || fallback;
+            },
+            dateLabel() {
+                return new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+            },
+            wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+                const words = text.split(' ');
+                let line = '';
+                const lines = [];
+                words.forEach(word => {
+                    const test = line ? line + ' ' + word : word;
+                    if(ctx.measureText(test).width > maxWidth && line){
+                        lines.push(line); line = word;
+                    } else line = test;
+                });
+                if(line) lines.push(line);
+                lines.forEach((l, i) => ctx.fillText(l, x, y + i * lineHeight));
+                return lines.length;
+            },
+            drawBase(ctx, w, h, title, subtitle) {
+                const sand = this.color('--sand', '#c2b280');
+                const spice = this.color('--spice', '#9d4edd');
+                const grad = ctx.createLinearGradient(0, 0, 0, h);
+                grad.addColorStop(0, '#15100a'); grad.addColorStop(1, '#050403');
+                ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
+                ctx.fillStyle = spice;
+                for(let i = 0; i < 45; i++){
+                    ctx.globalAlpha = Math.random() * 0.35 + 0.08;
+                    ctx.beginPath();
+                    ctx.arc(Math.random() * w, Math.random() * h, Math.random() * 2 + 0.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.globalAlpha = 1;
+                ctx.strokeStyle = sand; ctx.lineWidth = 3;
+                ctx.strokeRect(18, 18, w - 36, h - 36);
+                ctx.textAlign = 'center';
+                ctx.fillStyle = sand;
+                ctx.font = 'bold 46px Georgia, serif';
+                ctx.fillText('DUNEDLE', w / 2, 92);
+                ctx.font = '17px sans-serif';
+                ctx.fillStyle = '#9a9a9a';
+                ctx.fillText(this.dateLabel(), w / 2, 120);
+                ctx.font = 'bold 24px sans-serif';
+                ctx.fillStyle = '#f5f0e6';
+                ctx.fillText(title, w / 2, 168);
+                if(subtitle){
+                    ctx.font = '16px sans-serif';
+                    ctx.fillStyle = sand;
+                    ctx.fillText(subtitle, w / 2, 194);
+                }
+                return { sand, spice };
+            },
+            wordleImage(state, target) {
+                const w = 620, h = 780;
+                const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                const { sand } = this.drawBase(ctx, w, h, state.won ? '¡Palabra acertada!' : 'El desierto venció', `${state.won ? state.guesses.length : 'X'}/6 intentos`);
+                const rows = state.statuses || [];
+                const cols = rows[0] ? rows[0].length : 5;
+                const tile = Math.min(52, Math.floor((w - 100) / cols));
+                const gap = 8;
+                const gridW = cols * tile + (cols - 1) * gap;
+                const startX = (w - gridW) / 2;
+                let startY = 240;
+                const colors = { correct: '#4ade80', present: '#facc15', absent: '#3a3128' };
+                rows.forEach((row, r) => {
+                    row.forEach((status, c) => {
+                        ctx.fillStyle = colors[status] || colors.absent;
+                        const x = startX + c * (tile + gap), y = startY + r * (tile + gap);
+                        ctx.beginPath();
+                        if(ctx.roundRect) ctx.roundRect(x, y, tile, tile, 6); else ctx.rect(x, y, tile, tile);
+                        ctx.fill();
+                    });
+                });
+                ctx.font = '15px sans-serif'; ctx.fillStyle = '#888'; ctx.textAlign = 'center';
+                ctx.fillText('dunedle · reto diario del universo de Dune', w / 2, h - 40);
+                return canvas.toDataURL('image/png');
+            },
+            emojiImage(target, historyLen, won) {
+                const w = 620, h = 700;
+                const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                this.drawBase(ctx, w, h, 'Personaje del día', won ? `Identificado en ${historyLen} intento${historyLen === 1 ? '' : 's'}` : 'No identificado');
+                ctx.font = '80px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
+                ctx.fillText(target.emojis.join(' '), w / 2, 320);
+                ctx.font = 'bold 30px sans-serif'; ctx.fillStyle = this.color('--sand', '#c2b280');
+                ctx.fillText(won ? target.name : '???', w / 2, 400);
+                ctx.font = '15px sans-serif'; ctx.fillStyle = '#888';
+                ctx.fillText('dunedle · reto diario del universo de Dune', w / 2, h - 40);
+                return canvas.toDataURL('image/png');
+            },
+            quoteImage(target, historyLen, won) {
+                const w = 620, h = 700;
+                const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                this.drawBase(ctx, w, h, 'Frase del día', won ? `Adivinado en ${historyLen} intento${historyLen === 1 ? '' : 's'}` : 'No adivinado');
+                ctx.font = 'italic 22px Georgia, serif'; ctx.fillStyle = '#f0e6d2'; ctx.textAlign = 'center';
+                this.wrapText(ctx, `"${target.text}"`, w / 2, 290, w - 140, 34);
+                ctx.font = 'bold 26px sans-serif'; ctx.fillStyle = this.color('--sand', '#c2b280');
+                ctx.fillText(won ? '— ' + target.char : '— ???', w / 2, 460);
+                ctx.font = '15px sans-serif'; ctx.fillStyle = '#888';
+                ctx.fillText('dunedle · reto diario del universo de Dune', w / 2, h - 40);
+                return canvas.toDataURL('image/png');
+            },
+            async shareOrDownload(dataUrl, filename, textFallback, btn) {
+                if(navigator.canShare && navigator.share){
+                    try {
+                        const blob = await (await fetch(dataUrl)).blob();
+                        const file = new File([blob], filename, { type: 'image/png' });
+                        if(navigator.canShare({ files: [file] })){
+                            await navigator.share({ files: [file], title: 'Dunedle', text: textFallback });
+                            return;
+                        }
+                    } catch(e) { /* si el usuario cancela o falla, seguimos con la descarga */ }
+                }
+                const a = document.createElement('a');
+                a.href = dataUrl; a.download = filename; a.click();
+                if(btn){
+                    const original = btn.textContent;
+                    btn.textContent = '✅ ¡Descargada!';
+                    setTimeout(() => { btn.textContent = original; }, 1800);
+                }
+            },
+            preview(dataUrl, filename, textFallback) {
+                const el = document.createElement('div');
+                el.className = 'modal-overlay';
+                el.onclick = (e) => { if(e.target === el) el.remove(); };
+                el.innerHTML = `
+                    <div class="modal-box" style="text-align:center; max-width:420px;">
+                        <h2>📸 Tu resultado</h2>
+                        <img src="${dataUrl}" style="width:100%; border-radius:10px; margin:10px 0; border:1px solid var(--border-metal);" alt="Tarjeta de resultado de Dunedle">
+                        <button class="share-btn" id="sc-share-btn">📤 Compartir / Descargar imagen</button>
+                        <button class="share-btn" id="sc-text-btn" style="border-color:#555; color:#999;">📋 Copiar como texto</button>
+                        <button class="btn-action" style="margin-top:10px;" onclick="this.closest('.modal-overlay').remove()">CERRAR</button>
+                    </div>
+                `;
+                document.body.appendChild(el);
+                document.getElementById('sc-share-btn').onclick = (e) => this.shareOrDownload(dataUrl, filename, textFallback, e.currentTarget);
+                document.getElementById('sc-text-btn').onclick = (e) => Share.copy(textFallback, e.currentTarget);
+            }
+        };
+
         window.onload = () => {
             Spice.init(); Confetti.init(); ThemeManager.init(); SoundManager.init();
-            Router.go('home'); HowTo.maybeShowFirstTime();
+            Router.go('home'); HowTo.maybeShowFirstTime(); Sandworm.schedule();
         };
     </script>
 </body>
