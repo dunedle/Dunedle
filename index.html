@@ -61,15 +61,17 @@
         }
         .icon-btn:hover { border-color: var(--sand); }
 
-        .theme-swatches { display: flex; gap: 6px; }
-        .swatch {
-            width: 18px; height: 18px; border-radius: 50%; cursor: pointer;
-            border: 2px solid transparent; padding: 0;
+        .faction-choice-row { display: flex; gap: 16px; justify-content: center; margin: 20px 0; }
+        .faction-btn {
+            background: rgba(0,0,0,0.3); border: 2px solid var(--border-metal); border-radius: 12px;
+            padding: 18px 20px; display: flex; flex-direction: column; align-items: center; gap: 8px;
+            cursor: pointer; color: var(--text-white); font-weight: bold; flex: 1; max-width: 140px;
+            font-size: 0.9rem;
         }
-        .swatch.active { border-color: var(--text-white); }
-        .swatch-fremen { background: linear-gradient(135deg, #c2b280, #9d4edd); }
-        .swatch-harkonnen { background: linear-gradient(135deg, #e63946, #0a0a0a); }
-        .swatch-atreides { background: linear-gradient(135deg, #7cc576, #c0c0c0); }
+        .faction-btn:hover { border-color: var(--sand); }
+        .faction-emoji { font-size: 2.6rem; }
+        .faction-clear-link { display: block; margin: 12px auto 0; background: none; border: none; color: #888; text-decoration: underline; font-size: 0.8rem; cursor: pointer; }
+        .faction-emblem-btn { font-size: 1.2rem; }
 
         /* --- Modal --- */
         .modal-overlay {
@@ -260,6 +262,31 @@
             .card { padding: 1.1rem; }
         }
     </style>
+
+    <!-- ===== FIREBASE (ranking global de facciones) =====================
+         1) Crea un proyecto gratis en https://console.firebase.google.com
+         2) Activa "Realtime Database" (modo bloqueado/producción)
+         3) Ve a Configuración del proyecto → Tus apps → Web (</>) y copia
+            el objeto de configuración que te dan, pégalo abajo sustituyendo
+            los "TU_..." por tus valores reales.
+         4) En Firestore → Reglas, pega las reglas que te doy en la respuesta
+            de abajo y publica.
+         Si dejas esto sin configurar, el juego funciona exactamente igual,
+         simplemente la pantalla de "Guerra de facciones" no tendrá datos.
+    ===================================================================== -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+    <script>
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyDiFQrFUFchZkosP6Os-qFON7-a-wTa78g",
+            authDomain: "dunedle.firebaseapp.com",
+            databaseURL: "https://dunedle-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "dunedle",
+            storageBucket: "dunedle.firebasestorage.app",
+            messagingSenderId: "671478924854",
+            appId: "1:671478924854:web:ef06d7b427dc8d40f0fa97"
+        };
+    </script>
 </head>
 <body>
 
@@ -273,10 +300,8 @@
         </div>
         <h1 class="logo" onclick="Router.go('home')">DUNEDLE</h1>
         <div class="header-side right">
-            <div class="theme-swatches" role="group" aria-label="Paleta de color">
-                <button class="swatch swatch-fremen" data-theme="fremen" onclick="ThemeManager.set('fremen')" title="Fremen" aria-label="Tema Fremen"></button>
-                <button class="swatch swatch-harkonnen" data-theme="harkonnen" onclick="ThemeManager.set('harkonnen')" title="Harkonnen" aria-label="Tema Harkonnen"></button>
-                <button class="swatch swatch-atreides" data-theme="atreides" onclick="ThemeManager.set('atreides')" title="Atreides" aria-label="Tema Atreides"></button>
+            <div id="theme-selector-slot">
+                <button class="icon-btn" onclick="FactionChoice.show(false)" title="Elegir facción" aria-label="Elegir facción">⚔️</button>
             </div>
         </div>
     </header>
@@ -300,7 +325,92 @@
             { word: "SIETCH", desc: "Refugio y hogar comunal de los fremen en la roca." },
             { word: "HARKONNEN", desc: "La casa noble rival, enemiga jurada de los Atreides." },
             { word: "ATREIDES", desc: "La casa noble del Duque Leto y su hijo Paul." },
-            { word: "CUCHILLO CRIS", desc: "Cuchillo ceremonial fremen tallado con diente de gusano." }
+            { word: "CUCHILLO CRIS", desc: "Cuchillo ceremonial fremen tallado con diente de gusano." },
+            { word: "CALADAN", desc: "El planeta natal de la Casa Atreides, mundo de agua y bosques." },
+            { word: "ARRAKEEN", desc: "La capital de Arrakis, sede del poder en el planeta desierto." },
+            { word: "KAITAIN", desc: "La lujosa capital del Imperio, hogar de la Casa Corrino." },
+            { word: "CORRINO", desc: "La casa imperial que gobierna el Trono del León Dorado." },
+            { word: "PADISHAH", desc: "Título del Emperador que gobierna todo el Imperio conocido." },
+            { word: "USUL", desc: "El nombre secreto que los fremen dan a Paul: 'pilar de fuerza'." },
+            { word: "TAHADDI", desc: "Reto formal de combate entre fremen, a menudo a muerte." },
+            { word: "GOLPEADOR", desc: "Dispositivo que golpea la arena para atraer a los gusanos." },
+            { word: "RICHESE", desc: "Gran casa noble conocida por su artesanía y su tecnología." },
+            { word: "OJOS DE IBAD", desc: "El color que toman los ojos de quien consume mucha especia." },
+            { word: "TLEILAXU", desc: "Los inquietantes genetistas responsables de los gholas." },
+            { word: "IXIANOS", desc: "El pueblo de la Casa Ix, maestros de la tecnología prohibida." },
+            { word: "NAIB", desc: "Título que reciben los líderes de un sietch fremen." },
+            { word: "REVERENDA", desc: "Título de las líderes de la hermandad Bene Gesserit." },
+            { word: "PRECIENCIA", desc: "La capacidad de Paul para ver posibles futuros." },
+            { word: "GHOLA", desc: "Ser humano clonado a partir de células de un muerto." },
+            { word: "AXOLOTL", desc: "Los tanques Tleilaxu donde se cultivan los gholas." },
+            { word: "HACEDOR", desc: "Otro nombre que los fremen dan al gran gusano de arena." },
+            { word: "PLANETOLOGO", desc: "El cargo oficial de Liet-Kynes en Arrakis." },
+            { word: "WALLACH IX", desc: "El planeta natal de la hermandad Bene Gesserit." },
+            { word: "GIEDI PRIME", desc: "El planeta industrial y natal de la Casa Harkonnen." },
+            { word: "MAHDI", desc: "Otro título mesiánico que los fremen dan a Paul." },
+            { word: "LISAN AL-GAIB", desc: "'La Voz del Mundo Exterior', profecía fremen sobre Paul." },
+            { word: "AGUA DE VIDA", desc: "La sustancia letal que transforma a una Reverenda Madre." },
+            { word: "LIBRO AZHAR", desc: "El texto sagrado y secreto de la hermandad Bene Gesserit." },
+            { word: "ESPECIA", desc: "El nombre común, en español, de la melange." },
+            { word: "MELANGE", desc: "El nombre real de la especia que todos codician." },
+            { word: "MAULA", desc: "Pistola que dispara dardos envenenados, indetectable por escudos." },
+            { word: "BALISET", desc: "El instrumento de nueve cuerdas que toca Gurney Halleck." },
+            { word: "PRANA BINDU", desc: "El entrenamiento Bene Gesserit para el control del cuerpo." },
+            { word: "AMTAL", desc: "La regla que pone a prueba algo hasta destruirlo." },
+            { word: "CASA IX", desc: "La gran casa noble especializada en tecnología e inventos." },
+            { word: "ESCUDO", desc: "Campo de fuerza personal que detiene todo lo rápido, salvo la hoja lenta." },
+            { word: "HOLTZMAN", desc: "El efecto físico que hace posibles los escudos personales." },
+            { word: "SAYYADINA", desc: "Título de una futura sacerdotisa o líder espiritual fremen." },
+            { word: "PAUL", desc: "El heredero de la Casa Atreides y protagonista de la saga." },
+            { word: "IRULAN", desc: "La princesa cronista, hija del Emperador Shaddam IV." },
+            { word: "RABBAN", desc: "El brutal sobrino del Barón que gobierna Arrakis con puño de hierro." },
+            { word: "JESSICA", desc: "La Dama Bene Gesserit, concubina del Duque Leto y madre de Paul." },
+            { word: "VLADIMIR", desc: "El nombre de pila del cruel Barón Harkonnen." },
+            { word: "LETO", desc: "El Duque Rojo, padre de Paul y líder de la Casa Atreides." },
+            { word: "DUNCAN", desc: "El leal espadachín de los Atreides, después resucitado como ghola." },
+            { word: "GURNEY", desc: "El trovador y maestro de armas, fiel a los Atreides." },
+            { word: "CHANI", desc: "La guerrera fremen que se convierte en la amada de Paul." },
+            { word: "STILGAR", desc: "El naib del Sietch Tabr que acoge a Paul y Jessica." },
+            { word: "KYNES", desc: "El planetólogo imperial con lealtad secreta hacia los fremen." },
+            { word: "FEYD", desc: "El ambicioso y letal sobrino menor del Barón Harkonnen." },
+            { word: "HAWAT", desc: "El maestro de asesinos y mentat de la Casa Atreides." },
+            { word: "YUEH", desc: "El médico que traiciona a los Atreides bajo coacción." },
+            { word: "SHADDAM", desc: "El nombre del Emperador Padishah, cuarto de su nombre." },
+            { word: "HARAH", desc: "La mujer fremen que cuida el hogar de Paul en el sietch." },
+            { word: "JAMIS", desc: "El fremen que desafía a Paul a un duelo mortal." },
+            { word: "FENRING", desc: "El leal amigo y agente secreto del Emperador Shaddam IV." },
+            { word: "HASIMIR", desc: "El nombre de pila del Conde Fenring." },
+            { word: "PITER", desc: "El retorcido mentat al servicio del Barón Harkonnen." },
+            { word: "IDAHO", desc: "El apellido del leal espadachín Duncan de los Atreides." },
+            { word: "ZENSUNNI", desc: "El pueblo errante del que descienden culturalmente los fremen." },
+            { word: "BUTLERIANA", desc: "La yihad histórica que acabó con las máquinas pensantes." },
+            { word: "ORNITOPTERO", desc: "Aeronave de alas batientes usada para cruzar el desierto." },
+            { word: "CARTHAG", desc: "La antigua capital harkonnen en el planeta Arrakis." },
+            { word: "SIETCH TABR", desc: "El sietch que dirige Stilgar, hogar de Paul y Jessica." },
+            { word: "GAMONT", desc: "Gran casa noble conocida por su cultura del placer y el arte." },
+            { word: "ECAZ", desc: "Gran casa noble famosa por sus maestros talladores de madera." },
+            { word: "ATOMICAS", desc: "Las armas nucleares que cada gran casa guarda como disuasión." },
+            { word: "CONVENCION", desc: "El tratado que prohíbe el uso de armas atómicas entre casas." },
+            { word: "TEMOR", desc: "Lo que la letanía Bene Gesserit llama 'el asesino de la mente'." },
+            { word: "LETANIA", desc: "El texto que los Bene Gesserit recitan para controlar el miedo." },
+            { word: "LA VOZ", desc: "La técnica Bene Gesserit para controlar a otros con el tono de voz." },
+            { word: "KULL WAHAD", desc: "Exclamación fremen de sorpresa o asombro profundo." },
+            { word: "AL-LAT", desc: "El nombre fremen para el sol de Arrakis." },
+            { word: "TUPILE", desc: "El planeta secreto que sirve de refugio a las casas derrotadas." },
+            { word: "QIZARATE", desc: "El cuerpo religioso y misionero que surge del culto a Muad'Dib." },
+            { word: "DESIERTO", desc: "El paisaje que domina por completo el planeta Arrakis." },
+            { word: "CRUCERO", desc: "La inmensa nave de la Cofradía que transporta flotas enteras." },
+            { word: "NAVEGANTE", desc: "El mutado guía de la Cofradía que pliega el espacio con la especia." },
+            { word: "PLEGADO", desc: "La forma de viajar entre estrellas doblando el espacio mismo." },
+            { word: "COFRADIA", desc: "La organización que controla todos los viajes interestelares." },
+            { word: "LEON DORADO", desc: "El trono que ocupa el Emperador Padishah del Imperio." },
+            { word: "EMPERADOR", desc: "El gobernante supremo de todo el Imperio conocido." },
+            { word: "IMPERIO", desc: "El vasto dominio político que abarca miles de mundos." },
+            { word: "TORMENTA", desc: "La violenta tormenta de Coriolis que azota Arrakis." },
+            { word: "TRAICION", desc: "Lo que el médico Yueh comete contra la Casa Atreides." },
+            { word: "VENGANZA", desc: "Lo que impulsa a Paul tras la caída de su casa." },
+            { word: "PROFECIA", desc: "La leyenda fremen sobre un mesías del mundo exterior." },
+            { word: "MISIONARIA", desc: "El programa Bene Gesserit que sembró falsas profecías entre los fremen." }
         ];
 
         const DUNEDATA_CHARACTERS = [
@@ -314,7 +424,21 @@
             { name: "Feyd-Rautha", emojis: ["🗡️", "😈", "👑", "🩸"], desc: "El sobrino ambicioso y letal del Barón Harkonnen.", org: "Casa Harkonnen", planet: "Giedi Prime", first: "Dune", gender: "Hombre", height: 175, hairColor: "Castaño", movie: "Solo Parte Dos (2024)" },
             { name: "Chani", emojis: ["💧", "🏜️", "❤️", "🗡️"], desc: "Guerrera fremen y compañera de Paul.", org: "Fremen", planet: "Arrakis", first: "Dune", gender: "Mujer", height: 160, hairColor: "Negro", movie: "Ambas películas" },
             { name: "Liet-Kynes", emojis: ["🌱", "🏜️", "🔬", "🕊️"], desc: "Planetólogo imperial con lealtad secreta a los fremen.", org: "Fremen / Imperio", planet: "Arrakis", first: "Dune", gender: "Hombre", height: 180, hairColor: "Rubio", movie: "Solo Dune (2021)" },
-            { name: "Princesa Irulan", emojis: ["📜", "👑", "✍️", "💍"], desc: "Cronista imperial e hija del Emperador Shaddam IV.", org: "Casa Corrino", planet: "Kaitain", first: "Dune", gender: "Mujer", height: 172, hairColor: "Rubio dorado", movie: "Solo Parte Dos (2024)" }
+            { name: "Princesa Irulan", emojis: ["📜", "👑", "✍️", "💍"], desc: "Cronista imperial e hija del Emperador Shaddam IV.", org: "Casa Corrino", planet: "Kaitain", first: "Dune", gender: "Mujer", height: 172, hairColor: "Rubio dorado", movie: "Solo Parte Dos (2024)" },
+            { name: "Thufir Hawat", emojis: ["🗡️", "🧠", "👴", "🛡️"], desc: "El anciano mentat y maestro de asesinos leal a la Casa Atreides.", org: "Casa Atreides", planet: "Caladan", first: "Dune", gender: "Hombre", height: 175, hairColor: "Canoso", movie: "Ambas películas" },
+            { name: "Piter De Vries", emojis: ["🧠", "😏", "💉", "🖤"], desc: "El retorcido mentat pervertido al servicio del Barón Harkonnen.", org: "Casa Harkonnen", planet: "Giedi Prime", first: "Dune", gender: "Hombre", height: 178, hairColor: "Negro", movie: "Solo Dune (2021)" },
+            { name: "Wellington Yueh", emojis: ["💊", "😢", "🩺", "💔"], desc: "El médico Suk que traiciona a los Atreides bajo coacción.", org: "Casa Atreides", planet: "Caladan", first: "Dune", gender: "Hombre", height: 170, hairColor: "Gris", movie: "Solo Dune (2021)" },
+            { name: "Glossu Rabban", emojis: ["🐗", "⚔️", "😡", "🛢️"], desc: "El brutal sobrino del Barón que gobierna Arrakis con puño de hierro.", org: "Casa Harkonnen", planet: "Giedi Prime", first: "Dune", gender: "Hombre", height: 190, hairColor: "Calvo", movie: "Solo Parte Dos (2024)" },
+            { name: "Jamis", emojis: ["🗡️", "🏜️", "⚱️", "🌙"], desc: "El fremen que desafía a Paul a un duelo hasta la muerte.", org: "Fremen", planet: "Arrakis", first: "Dune", gender: "Hombre", height: 178, hairColor: "Negro", movie: "Solo Dune (2021)" },
+            { name: "Harah", emojis: ["🏠", "🧕", "🗡️", "👧"], desc: "La viuda de Jamis que cuida el hogar de Paul en el sietch.", org: "Fremen", planet: "Arrakis", first: "Dune", gender: "Mujer", height: 158, hairColor: "Negro", movie: "No aparece en las películas" },
+            { name: "Conde Hasimir Fenring", emojis: ["🕴️", "🗡️", "👑", "🤫"], desc: "El astuto confidente y agente secreto del Emperador Shaddam IV.", org: "Casa Corrino", planet: "Kaitain", first: "Dune", gender: "Hombre", height: 165, hairColor: "Castaño", movie: "Solo Parte Dos (2024)" },
+            { name: "Lady Margot Fenring", emojis: ["🧘", "👗", "🔮", "👑"], desc: "Dama Bene Gesserit y esposa del Conde Fenring.", org: "Bene Gesserit", planet: "Kaitain", first: "Dune", gender: "Mujer", height: 168, hairColor: "Rubio", movie: "Solo Parte Dos (2024)" },
+            { name: "Shaddam IV", emojis: ["👑", "⚔️", "🏛️", "😨"], desc: "El Padishah Emperador que gobierna todo el Imperio conocido.", org: "Casa Corrino", planet: "Kaitain", first: "Dune", gender: "Hombre", height: 178, hairColor: "Rubio", movie: "Solo Parte Dos (2024)" },
+            { name: "Gaius Helen Mohiam", emojis: ["🧘", "💉", "👵", "🖤"], desc: "La Reverenda Madre que somete a Paul a la prueba del Gom Jabbar.", org: "Bene Gesserit", planet: "Wallach IX", first: "Dune", gender: "Mujer", height: 160, hairColor: "Canoso", movie: "Ambas películas" },
+            { name: "Alia Atreides", emojis: ["👶", "🧠", "🗡️", "🌙"], desc: "La hermana de Paul, nacida con plena consciencia por la especia.", org: "Casa Atreides", planet: "Arrakis", first: "Dune", gender: "Mujer", height: 90, hairColor: "Cobrizo", movie: "Solo Parte Dos (2024)" },
+            { name: "Shadout Mapes", emojis: ["🏠", "🗡️", "🧕", "🔑"], desc: "El ama de llaves de la residencia Atreides en Arrakeen, de origen fremen.", org: "Fremen", planet: "Arrakis", first: "Dune", gender: "Mujer", height: 162, hairColor: "Negro", movie: "Solo Dune (2021)" },
+            { name: "Esmar Tuek", emojis: ["🚢", "🤝", "🏜️", "🕶️"], desc: "El líder contrabandista que da refugio a los supervivientes Atreides.", org: "Contrabandistas", planet: "Arrakis", first: "Dune", gender: "Hombre", height: 176, hairColor: "Gris", movie: "No aparece en las películas" },
+            { name: "Iakin Nefud", emojis: ["🛡️", "😰", "🏰", "⚔️"], desc: "El capitán de la guardia harkonnen en Arrakeen.", org: "Casa Harkonnen", planet: "Giedi Prime", first: "Dune", gender: "Hombre", height: 172, hairColor: "Castaño", movie: "No aparece en las películas" }
         ];
 
         const DUNEDATA_QUOTES = [
@@ -325,7 +449,21 @@
             { text: "El que puede destruir una cosa, la controla.", char: "Paul Atreides", context: "Reflexión de Paul sobre el verdadero significado del poder.", book: "Dune" },
             { text: "El desierto no perdona a los débiles.", char: "Proverbio Fremen", context: "Sabiduría del desierto compartida en los sietch.", book: "Dune" },
             { text: "Un líder fremen sirve, no gobierna.", char: "Stilgar", context: "Palabras de Stilgar sobre el liderazgo entre su gente.", book: "Dune" },
-            { text: "Quien controla la especia, controla el universo.", char: "Barón Vladimir Harkonnen", context: "Reflexión sobre el verdadero poder detrás del trono imperial.", book: "Dune" }
+            { text: "Quien controla la especia, controla el universo.", char: "Barón Vladimir Harkonnen", context: "Reflexión sobre el verdadero poder detrás del trono imperial.", book: "Dune" },
+            { text: "Un buen gobernante aprende primero a servir.", char: "Leto Atreides", context: "Enseñanza que el Duque transmite a su hijo Paul.", book: "Dune" },
+            { text: "La lealtad de los hombres se gana, nunca se ordena.", char: "Gurney Halleck", context: "Filosofía del maestro de armas de los Atreides.", book: "Dune" },
+            { text: "El poder atrae a quienes desean abusar de él.", char: "Conde Hasimir Fenring", context: "Advertencia susurrada en los pasillos del poder imperial.", book: "Dune" },
+            { text: "Sin honor, la victoria no vale nada.", char: "Duncan Idaho", context: "Código que Duncan defiende hasta su último aliento.", book: "Dune" },
+            { text: "El agua es más valiosa que cualquier joya en Arrakis.", char: "Proverbio Fremen", context: "Recordatorio constante de la vida en el desierto.", book: "Dune" },
+            { text: "Quien no puede cambiar su propio pensamiento, no cambiará nada.", char: "Princesa Irulan", context: "Reflexión recogida en sus crónicas imperiales.", book: "Dune" },
+            { text: "Todo hombre necesita ver su propia sangre para saber que es mortal.", char: "Barón Vladimir Harkonnen", context: "Filosofía retorcida sobre el poder y el miedo.", book: "Dune" },
+            { text: "Aprende a conocer a tus enemigos antes que a tus amigos.", char: "Thufir Hawat", context: "Máxima del viejo mentat y maestro de asesinos.", book: "Dune" },
+            { text: "Un mentat nunca deja de calcular.", char: "Piter De Vries", context: "Descripción del entrenamiento mental de los mentats.", book: "Dune" },
+            { text: "El desierto no olvida a quien lo desafía.", char: "Jamis", context: "Advertencia que Jamis lanza a los forasteros.", book: "Dune" },
+            { text: "Una Bene Gesserit nunca actúa por impulso.", char: "Gaius Helen Mohiam", context: "Principio fundamental de la disciplina Bene Gesserit.", book: "Dune" },
+            { text: "El verdadero poder no necesita anunciarse.", char: "Lady Margot Fenring", context: "Observación sobre la influencia oculta de la Bene Gesserit.", book: "Dune" },
+            { text: "Un Emperador gobierna miles de mundos, pero no el corazón de su pueblo.", char: "Shaddam IV", context: "Reflexión tardía sobre los límites del poder imperial.", book: "Dune" },
+            { text: "La supervivencia es el arte de practicar la paciencia.", char: "Proverbio Fremen", context: "Sabiduría transmitida de generación en generación en los sietch.", book: "Dune" }
         ];
 
         // Une nombres de personajes con emoji y autores de frases, para que el
@@ -475,6 +613,82 @@
             }
         };
 
+        const FactionWarView = {
+            async render(container) {
+                container.innerHTML = `
+                    <div class="home-menu" style="max-width:520px; text-align:center;">
+                        <h2 style="color:var(--sand);">⚔️ Guerra de facciones</h2>
+                        <p style="color:#999; font-size:0.85rem; margin:8px 0 20px;">Cargando el marcador global...</p>
+                    </div>
+                `;
+                if(!FactionWar.available){
+                    container.innerHTML = `
+                        <div class="home-menu" style="max-width:520px; text-align:center;">
+                            <h2 style="color:var(--sand);">⚔️ Guerra de facciones</h2>
+                            <p style="color:#999; font-size:0.9rem; margin:12px 0;">
+                                Esta función todavía no está configurada. Hace falta conectar el juego a una base de datos gratuita (Firebase) para que el marcador sea real y compartido entre todos los jugadores.
+                            </p>
+                            <button class="btn-action" onclick="Router.go('home')">INICIO</button>
+                        </div>
+                    `;
+                    return;
+                }
+                const data = await FactionWar.getStandings();
+                const lastMonth = await FactionWar.getLastMonthWinner();
+                if(!data){
+                    container.innerHTML = `
+                        <div class="home-menu" style="max-width:520px; text-align:center;">
+                            <h2 style="color:var(--sand);">⚔️ Guerra de facciones</h2>
+                            <p style="color:#999; font-size:0.9rem; margin:12px 0;">No se pudo cargar el marcador ahora mismo. Comprueba tu conexión e inténtalo de nuevo.</p>
+                            <button class="btn-action" onclick="Router.go('home')">INICIO</button>
+                        </div>
+                    `;
+                    return;
+                }
+                const total = (data.atreides || 0) + (data.harkonnen || 0);
+                const pctA = total ? Math.round((data.atreides / total) * 100) : 50;
+                const pctH = total ? 100 - pctA : 50;
+                const days = FactionWar.daysLeftInMonth();
+                const myFaction = localStorage.getItem('dunedle_faction');
+
+                let bannerHTML = '';
+                if(lastMonth){
+                    if(lastMonth.tie){
+                        bannerHTML = `<div class="lore-box" style="margin-bottom:16px;">🤝 El mes pasado terminó en empate.</div>`;
+                    } else {
+                        const f = FactionChoice.factions[lastMonth.winner];
+                        bannerHTML = `<div class="lore-box" style="margin-bottom:16px;">${f.emoji} <strong>${f.label}</strong> ganó la guerra de facciones el mes pasado.</div>`;
+                    }
+                }
+
+                container.innerHTML = `
+                    <div class="home-menu" style="max-width:520px; text-align:center;">
+                        <h2 style="color:var(--sand);">⚔️ Guerra de facciones</h2>
+                        <p style="color:#999; font-size:0.85rem; margin:8px 0 16px;">
+                            Cada acierto de quien haya elegido facción suma un punto. Quedan <strong style="color:var(--sand)">${days}</strong> día${days === 1 ? '' : 's'} para que acabe el mes.
+                        </p>
+                        ${bannerHTML}
+                        <div class="card" style="cursor:default; text-align:left;">
+                            <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:6px;">
+                                <span>🦅 Atreides</span><span>${pctA}% (${data.atreides || 0})</span>
+                            </div>
+                            <div style="background:#222; border-radius:8px; height:14px; overflow:hidden; margin-bottom:16px;">
+                                <div style="width:${pctA}%; height:100%; background:#7cc576;"></div>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; font-weight:bold; margin-bottom:6px;">
+                                <span>🐏 Harkonnen</span><span>${pctH}% (${data.harkonnen || 0})</span>
+                            </div>
+                            <div style="background:#222; border-radius:8px; height:14px; overflow:hidden;">
+                                <div style="width:${pctH}%; height:100%; background:#e63946;"></div>
+                            </div>
+                        </div>
+                        ${!myFaction ? `<p style="color:#999; font-size:0.8rem; margin-top:12px;">Aún no has elegido facción — tus aciertos no suman al marcador hasta que elijas una.</p>` : ''}
+                        <button class="btn-action" onclick="Router.go('home')">INICIO</button>
+                    </div>
+                `;
+            }
+        };
+
         const AchievementsView = {
             render(container) {
                 const cards = ACHIEVEMENTS.map(a => {
@@ -558,6 +772,7 @@
                 else if(view === 'whois') CharacterGuessGame.init(port);
                 else if(view === 'stats') StatsView.render(port);
                 else if(view === 'achievements') AchievementsView.render(port);
+                else if(view === 'factionwar') FactionWarView.render(port);
             },
             renderHome(container) {
                 const sW = Daily.getState('wordle');
@@ -573,6 +788,7 @@
                         <div class="card" onclick="Router.go('whois')"><h2>🕵️ ¿Quién es?</h2><p>Compara datos y adivina.</p><span class="status-badge">${getBadge(sC)}</span></div>
                         <div class="card" onclick="Router.go('stats')"><h2>📊 Estadísticas</h2><p>Tu progreso en Dunedle.</p></div>
                         <div class="card" onclick="Router.go('achievements')"><h2>🏆 Logros</h2><p>Desbloquea insignias jugando.</p></div>
+                        <div class="card" onclick="Router.go('factionwar')"><h2>⚔️ Guerra de facciones</h2><p>Ranking global entre Atreides y Harkonnen.</p></div>
                     </div>
                 `;
             }
@@ -745,6 +961,7 @@
                 }
                 if(this.state.finished && !this.state.statsRecorded) {
                     StatsManager.record('wordle', this.state.won, this.state.guesses.length);
+                    if(this.state.won) FactionWar.recordWin('wordle');
                     this.state.statsRecorded = true;
                 }
                 Daily.saveState('wordle', this.state); this.current = "";
@@ -820,6 +1037,7 @@
                 }
                 if(this.state.finished && !this.state.statsRecorded) {
                     StatsManager.record('emoji', true, this.state.history.length + 1);
+                    FactionWar.recordWin('emoji');
                     this.state.statsRecorded = true;
                 }
                 Daily.saveState('emoji', this.state); this.render(document.getElementById('view-port'));
@@ -877,6 +1095,7 @@
                 }
                 if(this.state.finished && !this.state.statsRecorded) {
                     StatsManager.record('quote', true, this.state.history.length + 1);
+                    FactionWar.recordWin('quote');
                     this.state.statsRecorded = true;
                 }
                 Daily.saveState('quote', this.state); this.render(document.getElementById('view-port'));
@@ -1034,6 +1253,7 @@
                 }
                 if(this.state.finished && !this.state.statsRecorded){
                     StatsManager.record('character', true, this.state.rows.length);
+                    FactionWar.recordWin('character');
                     this.state.statsRecorded = true;
                 }
                 Daily.saveState('character', this.state);
@@ -1288,14 +1508,157 @@
                 root.setProperty('--sand-dark', t.sandDark);
                 root.setProperty('--spice', t.spice);
                 Spice.color = t.spiceRgb;
-                document.querySelectorAll('.swatch').forEach(s => s.classList.toggle('active', s.dataset.theme === name));
                 localStorage.setItem('dunedle_theme', name);
             }
         };
 
+        /* --- ELECCIÓN DE FACCIÓN --- */
+        /* --- GUERRA DE FACCIONES (ranking global vía Firebase) --- */
+        const FactionWar = {
+            db: null,
+            deviceId: null,
+            available: false,
+            init() {
+                try {
+                    if(typeof firebase === 'undefined' || FIREBASE_CONFIG.apiKey === 'TU_API_KEY') return;
+                    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+                    this.db = firebase.database();
+                    this.deviceId = this.getDeviceId();
+                    this.available = true;
+                } catch(e) { this.available = false; }
+            },
+            getDeviceId() {
+                let id = localStorage.getItem('dunedle_device_id');
+                if(!id){
+                    id = (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + '-' + Math.random().toString(36).slice(2));
+                    localStorage.setItem('dunedle_device_id', id);
+                }
+                return id;
+            },
+            monthKey() {
+                const d = new Date();
+                return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            },
+            daysLeftInMonth() {
+                const d = new Date();
+                const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+                return lastDay - d.getDate();
+            },
+            async recordWin(game) {
+                if(!this.available) return;
+                const faction = localStorage.getItem('dunedle_faction');
+                if(faction !== 'atreides' && faction !== 'harkonnen') return; // sin facción elegida, no cuenta
+                const today = todayStr();
+                const receiptId = `${this.deviceId}_${game}_${today}`;
+                const receiptRef = this.db.ref('factionWar/receipts/' + receiptId);
+                try {
+                    // Las reglas solo permiten crear este recibo si no existe ya: si esto falla,
+                    // es que ya se contó este punto hoy para este juego y este dispositivo.
+                    await receiptRef.set({ device: this.deviceId, game, date: today, faction });
+                } catch(e) {
+                    return;
+                }
+                try {
+                    const currentMonth = this.monthKey();
+                    const currentRef = this.db.ref('factionWar/current');
+                    const snap = await currentRef.once('value');
+                    const data = snap.val();
+                    if(data && data.month && data.month !== currentMonth){
+                        await this.db.ref('factionWar/history/' + data.month).set(data);
+                        await currentRef.set({ atreides: 0, harkonnen: 0, month: currentMonth });
+                    }
+                    await currentRef.child(faction).transaction(n => (n || 0) + 1);
+                    await currentRef.child('month').set(currentMonth);
+                } catch(e) { /* sin conexión o Firebase no disponible: no pasa nada, el recibo ya quedó guardado */ }
+            },
+            async getStandings() {
+                if(!this.available) return null;
+                try {
+                    const snap = await this.db.ref('factionWar/current').once('value');
+                    return snap.val() || { atreides: 0, harkonnen: 0 };
+                } catch(e) { return null; }
+            },
+            async getLastMonthWinner() {
+                if(!this.available) return null;
+                try {
+                    const d = new Date(); d.setMonth(d.getMonth() - 1);
+                    const prevMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+                    const snap = await this.db.ref('factionWar/history/' + prevMonth).once('value');
+                    const data = snap.val();
+                    if(!data) return null;
+                    if(data.atreides === data.harkonnen) return { tie: true };
+                    return { winner: data.atreides > data.harkonnen ? 'atreides' : 'harkonnen', ...data };
+                } catch(e) { return null; }
+            }
+        };
+
+        const FactionChoice = {
+            factions: {
+                atreides: { emoji: '🦅', label: 'Atreides' },
+                harkonnen: { emoji: '🐏', label: 'Harkonnen' }
+            },
+            show(isReopen) {
+                const el = document.createElement('div');
+                el.className = 'modal-overlay';
+                el.id = 'faction-overlay';
+                el.onclick = (e) => { if(e.target === el) FactionChoice.close(); };
+                el.innerHTML = `
+                    <div class="modal-box" style="text-align:center;">
+                        <h2>⚔️ Elige tu facción</h2>
+                        <p>La interfaz cambiará de color según tu elección. Podrás cambiarla luego pulsando tu emblema en la cabecera.</p>
+                        <div class="faction-choice-row">
+                            <button class="faction-btn" onclick="FactionChoice.choose('atreides')">
+                                <span class="faction-emoji">🦅</span><span>Atreides</span>
+                            </button>
+                            <button class="faction-btn" onclick="FactionChoice.choose('harkonnen')">
+                                <span class="faction-emoji">🐏</span><span>Harkonnen</span>
+                            </button>
+                        </div>
+                        ${isReopen ? '<button class="faction-clear-link" onclick="FactionChoice.clear()">Quitar mi facción</button>' : ''}
+                        <button class="btn-action" style="margin-top:14px; background:transparent; border:1px solid var(--border-metal); color:#999;" onclick="FactionChoice.close()">Ahora no</button>
+                    </div>
+                `;
+                document.body.appendChild(el);
+            },
+            close() {
+                const el = document.getElementById('faction-overlay');
+                if(el) el.remove();
+            },
+            choose(faction) {
+                ThemeManager.set(faction);
+                localStorage.setItem('dunedle_faction', faction);
+                this.close();
+                this.updateHeaderIcon();
+            },
+            clear() {
+                localStorage.removeItem('dunedle_faction');
+                ThemeManager.set('fremen');
+                this.close();
+                this.updateHeaderIcon();
+            },
+            maybeShow() {
+                if(!localStorage.getItem('dunedle_faction_prompted')){
+                    localStorage.setItem('dunedle_faction_prompted', '1');
+                    this.show(false);
+                }
+            },
+            updateHeaderIcon() {
+                const slot = document.getElementById('theme-selector-slot');
+                if(!slot) return;
+                const chosen = localStorage.getItem('dunedle_faction');
+                if(chosen && this.factions[chosen]){
+                    slot.innerHTML = `<button class="icon-btn faction-emblem-btn" onclick="FactionChoice.show(true)" title="Tu facción: ${this.factions[chosen].label}" aria-label="Cambiar facción">${this.factions[chosen].emoji}</button>`;
+                } else {
+                    slot.innerHTML = `<button class="icon-btn" onclick="FactionChoice.show(false)" title="Elegir facción" aria-label="Elegir facción">⚔️</button>`;
+                }
+            },
+            init() { this.updateHeaderIcon(); }
+        };
+
         /* --- CÓMO JUGAR --- */
         const HowTo = {
-            show() {
+            show(onCloseExtra) {
+                this._onCloseExtra = onCloseExtra || null;
                 const el = document.createElement('div');
                 el.className = 'modal-overlay';
                 el.id = 'howto-overlay';
@@ -1326,11 +1689,16 @@
             close() {
                 const el = document.getElementById('howto-overlay');
                 if(el) el.remove();
+                if(this._onCloseExtra){
+                    const cb = this._onCloseExtra;
+                    this._onCloseExtra = null;
+                    cb();
+                }
             },
             maybeShowFirstTime() {
                 if(!localStorage.getItem('dunedle_howto_seen')){
                     localStorage.setItem('dunedle_howto_seen', '1');
-                    this.show();
+                    this.show(() => FactionChoice.maybeShow());
                 }
             }
         };
@@ -1504,6 +1872,7 @@
 
         window.onload = () => {
             Spice.init(); Confetti.init(); ThemeManager.init(); SoundManager.init();
+            FactionChoice.init(); FactionWar.init();
             Router.go('home'); HowTo.maybeShowFirstTime(); Sandworm.schedule();
         };
     </script>
