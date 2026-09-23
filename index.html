@@ -4,10 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>DUNEDLE</title>
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" href="favicon-32.png">
-    <link rel="apple-touch-icon" href="apple-touch-icon.png">
-    <meta name="theme-color" content="#0a0a0a">
 
     <style>
         :root {
@@ -427,7 +423,7 @@
             { name: "Lady Jessica", emojis: ["👩‍🏫", "🧘", "🤰", "💧"], desc: "Reverenda Madre y madre de Paul.", org: "Bene Gesserit", planet: "Caladan", first: "Dune", gender: "Mujer", height: 170, hairColor: "Rubio bronce", movie: "Ambas películas" },
             { name: "Stilgar", emojis: ["🧔", "💧", "🏜️", "🛡️"], desc: "Naib del Sietch Tabr.", org: "Fremen", planet: "Arrakis", first: "Dune", gender: "Hombre", height: 178, hairColor: "Negro", movie: "Ambas películas" },
             { name: "Duncan Idaho", emojis: ["⚔️", "🔁", "💀", "🛡️"], desc: "El espadachín leal de los Atreides, más tarde resucitado como ghola.", org: "Casa Atreides", planet: "Caladan", first: "Dune", gender: "Hombre", height: 185, hairColor: "Negro rizado", movie: "Solo Dune (2021)" },
-            { name: "Gurney Halleck", emojis: ["🎸", "🗡️", "😠", "🤎"], desc: "Maestro de armas y trovador de la Casa Atreides.", org: "Casa Atreides", planet: "Caladan", first: "Dune", gender: "Hombre", height: 188, hairColor: "Rubio rojizo", movie: "Solo Parte Dos (2024)" },
+            { name: "Gurney Halleck", emojis: ["🎸", "🗡️", "😠", "🤎"], desc: "Maestro de armas y trovador de la Casa Atreides.", org: "Casa Atreides", planet: "Caladan", first: "Dune", gender: "Hombre", height: 188, hairColor: "Rubio rojizo", movie: "Ambas películas" },
             { name: "Barón Vladimir Harkonnen", emojis: ["🦈", "🛢️", "🖤", "👑"], desc: "El cruel y astuto señor de la Casa Harkonnen.", org: "Casa Harkonnen", planet: "Giedi Prime", first: "Dune", gender: "Hombre", height: 160, hairColor: "Calvo", movie: "Solo Parte Dos (2024)" },
             { name: "Feyd-Rautha", emojis: ["🗡️", "😈", "👑", "🩸"], desc: "El sobrino ambicioso y letal del Barón Harkonnen.", org: "Casa Harkonnen", planet: "Giedi Prime", first: "Dune", gender: "Hombre", height: 175, hairColor: "Castaño", movie: "Solo Parte Dos (2024)" },
             { name: "Chani", emojis: ["💧", "🏜️", "❤️", "🗡️"], desc: "Guerrera fremen y compañera de Paul.", org: "Fremen", planet: "Arrakis", first: "Dune", gender: "Mujer", height: 160, hairColor: "Negro", movie: "Ambas películas" },
@@ -452,17 +448,13 @@
         const DUNEDATA_QUOTES = [
             { text: "El miedo es el asesino de la mente.", char: "Paul Atreides", context: "Letanía contra el miedo.", book: "Dune" },
             { text: "Un comienzo es un tiempo muy delicado.", char: "Princesa Irulan", context: "Manual de Muad'Dib.", book: "Dune" },
-            { text: "Dios creó Arrakis para probar a los fieles.", char: "Proverbio Fremen", context: "Dicho popular.", book: "Dune" },
-            { text: "La especia debe fluir.", char: "Proverbio Imperial", context: "El lema que resume la dependencia de todo el Imperio hacia la melange.", book: "Dune" },
             { text: "El que puede destruir una cosa, la controla.", char: "Paul Atreides", context: "Reflexión de Paul sobre el verdadero significado del poder.", book: "Dune" },
-            { text: "El desierto no perdona a los débiles.", char: "Proverbio Fremen", context: "Sabiduría del desierto compartida en los sietch.", book: "Dune" },
             { text: "Un líder fremen sirve, no gobierna.", char: "Stilgar", context: "Palabras de Stilgar sobre el liderazgo entre su gente.", book: "Dune" },
             { text: "Quien controla la especia, controla el universo.", char: "Barón Vladimir Harkonnen", context: "Reflexión sobre el verdadero poder detrás del trono imperial.", book: "Dune" },
             { text: "Un buen gobernante aprende primero a servir.", char: "Leto Atreides", context: "Enseñanza que el Duque transmite a su hijo Paul.", book: "Dune" },
             { text: "La lealtad de los hombres se gana, nunca se ordena.", char: "Gurney Halleck", context: "Filosofía del maestro de armas de los Atreides.", book: "Dune" },
             { text: "El poder atrae a quienes desean abusar de él.", char: "Conde Hasimir Fenring", context: "Advertencia susurrada en los pasillos del poder imperial.", book: "Dune" },
             { text: "Sin honor, la victoria no vale nada.", char: "Duncan Idaho", context: "Código que Duncan defiende hasta su último aliento.", book: "Dune" },
-            { text: "El agua es más valiosa que cualquier joya en Arrakis.", char: "Proverbio Fremen", context: "Recordatorio constante de la vida en el desierto.", book: "Dune" },
             { text: "Quien no puede cambiar su propio pensamiento, no cambiará nada.", char: "Princesa Irulan", context: "Reflexión recogida en sus crónicas imperiales.", book: "Dune" },
             { text: "Todo hombre necesita ver su propia sangre para saber que es mortal.", char: "Barón Vladimir Harkonnen", context: "Filosofía retorcida sobre el poder y el miedo.", book: "Dune" },
             { text: "Aprende a conocer a tus enemigos antes que a tus amigos.", char: "Thufir Hawat", context: "Máxima del viejo mentat y maestro de asesinos.", book: "Dune" },
@@ -470,8 +462,7 @@
             { text: "El desierto no olvida a quien lo desafía.", char: "Jamis", context: "Advertencia que Jamis lanza a los forasteros.", book: "Dune" },
             { text: "Una Bene Gesserit nunca actúa por impulso.", char: "Gaius Helen Mohiam", context: "Principio fundamental de la disciplina Bene Gesserit.", book: "Dune" },
             { text: "El verdadero poder no necesita anunciarse.", char: "Lady Margot Fenring", context: "Observación sobre la influencia oculta de la Bene Gesserit.", book: "Dune" },
-            { text: "Un Emperador gobierna miles de mundos, pero no el corazón de su pueblo.", char: "Shaddam IV", context: "Reflexión tardía sobre los límites del poder imperial.", book: "Dune" },
-            { text: "La supervivencia es el arte de practicar la paciencia.", char: "Proverbio Fremen", context: "Sabiduría transmitida de generación en generación en los sietch.", book: "Dune" }
+            { text: "Un Emperador gobierna miles de mundos, pero no el corazón de su pueblo.", char: "Shaddam IV", context: "Reflexión tardía sobre los límites del poder imperial.", book: "Dune" }
         ];
 
         // Une nombres de personajes con emoji y autores de frases, para que el
@@ -804,7 +795,6 @@
                     </div>
                     <p class="disclaimer">
                         Dunedle es un proyecto de fan hecho sin ánimo de lucro, sin afiliación con Frank Herbert, Legendary Pictures ni Warner Bros. Dune® es una marca registrada de sus respectivos propietarios. Versión beta v0.5 — puede contener errores.
-                        <br><a href="privacy.html" target="_blank" rel="noopener" style="color:#888;">Política de privacidad</a>
                     </p>
                 `;
             }
