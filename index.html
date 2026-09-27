@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DUNEDLE</title>
+    <title>Dunedle — Juegos diarios de Dune</title>
+    <meta name="description" content="Dunedle es una colección de juegos diarios inspirados en el universo de Dune. Pon a prueba tus conocimientos con un Wordle y otros retos.">
 
     <style>
         :root {
@@ -117,6 +118,7 @@
 
         /* --- Menú Principal --- */
         .home-menu { display: flex; flex-direction: column; gap: 1rem; width: 100%; max-width: 500px; padding-top: 1rem; }
+        .home-subtitle { text-align: center; color: var(--sand); font-size: 0.95rem; letter-spacing: 1px; margin: -0.5rem 0 0.2rem; opacity: 0.85; }
         .disclaimer { font-size: 0.7rem; line-height: 1.4; color: #666; text-align: center; margin-top: 20px; padding: 0 10px 20px; }
         .feedback-box {
             margin-top: 24px; padding: 16px; text-align: center;
@@ -788,6 +790,7 @@
                 const getBadge = (s) => !s.finished ? '⏳' : (s.won ? '✅' : '❌');
                 container.innerHTML = `
                     <div class="home-menu">
+                        <p class="home-subtitle">Juegos diarios de Dune</p>
                         <div class="card" onclick="Router.go('wordle')"><h2>🟨 Palabra del día</h2><p>El reto clásico.</p><span class="status-badge">${getBadge(sW)}</span></div>
                         <div class="card" onclick="Router.go('emojis')"><h2>😀 Personaje del día</h2><p>Identifica símbolos.</p><span class="status-badge">${getBadge(sE)}</span></div>
                         <div class="card" onclick="Router.go('quotes')"><h2>💬 Frase del día</h2><p>¿Quién lo dijo?</p><span class="status-badge">${getBadge(sQ)}</span></div>
