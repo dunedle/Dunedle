@@ -230,6 +230,12 @@
         .achv-toast-title { font-weight: bold; color: var(--text-white); }
 
         .char-table-wrap { width: 100%; overflow-x: auto; margin: 15px 0; padding-bottom: 8px; }
+
+        /* En pantallas anchas (PC), este panel puede ser más ancho que el resto
+           para que las 7 columnas de la tabla quepan sin necesidad de scroll. */
+        @media (min-width: 820px) {
+            .victory-panel.who-is-panel { max-width: 900px; }
+        }
         .char-grid { display: inline-grid; grid-auto-flow: row; grid-template-columns: 130px repeat(6, 100px); gap: 6px; min-width: 100%; }
         .char-cell {
             background: var(--panel-gray); border: 2px solid var(--border-metal); border-radius: 8px;
@@ -1132,7 +1138,7 @@
             render(container) {
                 if(this.state.finished) {
                     container.innerHTML = `
-                        <div class="victory-panel">
+                        <div class="victory-panel who-is-panel">
                             <h2 style="color:var(--correct)">IDENTIFICADO</h2>
                             <h1>${this.target.name}</h1>
                             <div class="meta-tags">
@@ -1150,7 +1156,7 @@
                     TimerSystem.start(); Confetti.burst(); return;
                 }
                 container.innerHTML = `
-                    <div class="victory-panel">
+                    <div class="victory-panel who-is-panel">
                         <h2>¿QUIÉN ES?</h2>
                         <p style="color:#999; font-size:0.85rem; margin:8px 0 15px;">Escribe un nombre. Compararemos sus datos con el personaje del día.</p>
                         <div class="input-group" style="margin:0 auto"><input type="text" id="c-input" placeholder="Nombre..." autocomplete="off"><div id="c-sugg" class="suggestions"></div></div>
