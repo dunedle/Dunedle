@@ -59,6 +59,15 @@
             padding: 2px 6px; border-radius: 6px; text-shadow: none;
         }
 
+        .emoji-slots { display: flex; justify-content: center; gap: 12px; margin: 20px 0; flex-wrap: wrap; }
+        .emoji-slot {
+            font-size: 2.4rem; width: 64px; height: 64px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.25); border: 2px solid var(--border-metal); border-radius: 12px;
+            transition: opacity 0.3s, filter 0.3s;
+        }
+        .emoji-slot-hidden { opacity: 0.4; filter: blur(1.5px); color: #888; }
+
         .header-side { display: flex; align-items: center; gap: 0.5rem; min-width: 90px; }
         .header-side.right { justify-content: flex-end; }
         .icon-btn {
@@ -273,6 +282,8 @@
             .key { height: 44px; font-size: 0.8rem; }
             .key-row { gap: 3px; }
             .card { padding: 1.1rem; }
+            .emoji-slot { width: 52px; height: 52px; font-size: 2rem; }
+            .emoji-slots { gap: 8px; }
         }
     </style>
 
@@ -311,7 +322,7 @@
             <button class="icon-btn" onclick="HowTo.show()" title="Cómo jugar" aria-label="Cómo jugar">?</button>
             <button class="icon-btn" id="mute-btn" onclick="SoundManager.toggle()" title="Silenciar sonido" aria-label="Silenciar sonido">🔊</button>
         </div>
-        <h1 class="logo" onclick="Router.go('home')">DUNEDLE <span class="beta-badge">BETA v0.5</span></h1>
+        <h1 class="logo" onclick="Router.go('home')">DUNEDLE <span class="beta-badge">BETA v0.6</span></h1>
         <div class="header-side right">
             <div id="theme-selector-slot">
                 <button class="icon-btn" onclick="FactionChoice.show(false)" title="Elegir facción" aria-label="Elegir facción">⚔️</button>
@@ -804,7 +815,7 @@
                         <a href="mailto:dunedle.es@gmail.com?subject=Feedback%20Dunedle" class="feedback-link">✉️ dunedle.es@gmail.com</a>
                     </div>
                     <p class="disclaimer">
-                        Dunedle es un proyecto de fan hecho sin ánimo de lucro, sin afiliación con Frank Herbert, Legendary Pictures ni Warner Bros. Dune® es una marca registrada de sus respectivos propietarios. Versión beta v0.5 — puede contener errores.
+                        Dunedle es un proyecto de fan hecho sin ánimo de lucro, sin afiliación con Frank Herbert, Legendary Pictures ni Warner Bros. Dune® es una marca registrada de sus respectivos propietarios. Versión beta v0.6 — puede contener errores.
                     </p>
                 `;
             }
@@ -1030,7 +1041,10 @@
                 container.innerHTML = `
                     <div class="victory-panel">
                         <h2>PERSONAJE DEL DÍA</h2>
-                        <div style="font-size:3rem; margin:20px 0;">${this.target.emojis.slice(0, (this.state.history.length) + 1).join(' ')}</div>
+                        <div class="emoji-slots">${this.target.emojis.map((e, i) => {
+                            const revealed = i < this.state.history.length + 1;
+                            return `<div class="emoji-slot ${revealed ? '' : 'emoji-slot-hidden'}">${revealed ? e : '❓'}</div>`;
+                        }).join('')}</div>
                         <div class="input-group" style="margin:0 auto"><input type="text" id="e-input" placeholder="Nombre..." autocomplete="off"><div id="e-sugg" class="suggestions"></div></div>
                         <button class="btn-action" onclick="EmojiGame.check()">COMPROBAR</button>
                         <div class="history-container">${this.state.history.map(h => `<div class="history-item history-wrong"><span>❌ ${h}</span></div>`).join('')}</div>
@@ -1295,17 +1309,14 @@
 
         // Busca por inicio de palabra: prioriza nombres/apellidos que EMPIEZAN por lo escrito,
         // en vez de cualquier nombre que simplemente contenga esa letra en cualquier parte.
+        // Solo sugiere nombres que EMPIEZAN por lo escrito (no vale con que una palabra
+        // cualquiera del nombre, como el apellido, empiece por esa letra).
         function smartNameSearch(names, query, limit) {
             const val = query.toLowerCase().trim();
             if(!val) return [];
-            const fullMatches = [];
-            const wordMatches = [];
-            names.forEach(n => {
-                const lower = n.toLowerCase();
-                if(lower.startsWith(val)) fullMatches.push(n);
-                else if(lower.split(/[\s-]+/).some(w => w.startsWith(val))) wordMatches.push(n);
-            });
-            return [...fullMatches, ...wordMatches].slice(0, limit || 5);
+            return names
+                .filter(n => n.toLowerCase().startsWith(val))
+                .slice(0, limit || 5);
         }
 
         function setupNameSearch(inputId, suggId, source, onCheck) {
