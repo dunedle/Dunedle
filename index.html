@@ -70,6 +70,11 @@
         .emoji-slot-bg { position: absolute; inset: -6px; background: rgba(157,78,221,0.22); filter: blur(4px); }
         .emoji-slot-mark { position: relative; z-index: 1; }
 
+        .hints-box { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 4px 0 16px; }
+        .hint-chip { font-size: 0.78rem; padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border-metal); }
+        .hint-chip.hint-unlocked { background: rgba(74,222,128,0.12); border-color: var(--correct); color: var(--text-white); }
+        .hint-chip.hint-locked { background: rgba(0,0,0,0.2); color: #777; }
+
         .streak-badge {
             display: inline-flex; align-items: center; gap: 2px;
             font-size: 0.8rem; font-weight: bold; color: var(--sand);
@@ -331,7 +336,7 @@
         <div class="header-side">
             <button class="icon-btn" onclick="HowTo.show()" title="Cómo jugar" aria-label="Cómo jugar">?</button>
             <button class="icon-btn" id="mute-btn" onclick="SoundManager.toggle()" title="Silenciar sonido" aria-label="Silenciar sonido">🔊</button>
-            <span id="streak-badge" class="streak-badge" title="Tu racha de días jugando">🔥0</span>
+            <span id="streak-badge" class="streak-badge" title="Tu racha de días jugando" onclick="GlobalStreak.showInfo()" style="cursor:pointer;">🔥0</span>
         </div>
         <h1 class="logo" onclick="Router.go('home')">DUNEDLE <span class="beta-badge">BETA v0.6</span></h1>
         <div class="header-side right">
@@ -1094,9 +1099,25 @@
         /* --- FRASES --- */
         const QuoteGame = {
             target: null, state: null,
+            hintDefs: [
+                { key: 'org', label: 'Facción', icon: '🏛️' },
+                { key: 'movie', label: 'Película', icon: '🎬' },
+                { key: 'first', label: 'Libro', icon: '📖' }
+            ],
             init(container) {
                 this.target = DUNEDATA_QUOTES[Daily.getIndex(DUNEDATA_QUOTES)];
                 this.state = Daily.getState('quote'); this.render(container);
+            },
+            hintsHTML() {
+                const targetChar = DUNEDATA_CHARACTERS.find(c => c.name === this.target.char);
+                if(!targetChar) return '';
+                const unlocked = Math.min(this.hintDefs.length, Math.floor(this.state.history.length / 5));
+                const chips = this.hintDefs.map((h, i) => {
+                    if(i < unlocked) return `<span class="hint-chip hint-unlocked">${h.icon} ${h.label}: ${targetChar[h.key]}</span>`;
+                    const needed = (i + 1) * 5 - this.state.history.length;
+                    return `<span class="hint-chip hint-locked">🔒 ${h.label} (${needed} fallo${needed === 1 ? '' : 's'} más)</span>`;
+                }).join('');
+                return `<div class="hints-box">${chips}</div>`;
             },
             render(container) {
                 if(this.state.finished) {
@@ -1116,6 +1137,7 @@
                     <div class="victory-panel">
                         <h2>¿QUIÉN DIJO ESTO?</h2>
                         <p style="font-style:italic; margin:20px 0; color:var(--sand); font-size:1.3rem;">"${this.target.text}"</p>
+                        ${this.hintsHTML()}
                         <div class="input-group" style="margin:0 auto"><input type="text" id="q-input" placeholder="Nombre..." autocomplete="off"><div id="q-sugg" class="suggestions"></div></div>
                         <button class="btn-action" onclick="QuoteGame.check()">COMPROBAR</button>
                         <div class="history-container">${this.state.history.map(h => `<div class="history-item history-wrong"><span>❌ ${h}</span></div>`).join('')}</div>
@@ -1292,7 +1314,7 @@
                     this.state.finished = true; this.state.won = true;
                     setTimeout(() => { SoundManager.win(); Haptics.win(); }, 150);
                 } else {
-                    SoundManager.wrong(); Haptics.wrong();
+                    Haptics.wrong();
                 }
                 if(this.state.finished && !this.state.statsRecorded){
                     StatsManager.record('character', true, this.state.rows.length);
@@ -1477,6 +1499,23 @@
                 const s = this.get();
                 el.textContent = `🔥${s.count}`;
                 el.style.display = 'inline-flex';
+            },
+            showInfo() {
+                const s = this.get();
+                const el = document.createElement('div');
+                el.className = 'modal-overlay';
+                el.id = 'streak-info-overlay';
+                el.onclick = (e) => { if(e.target === el) el.remove(); };
+                el.innerHTML = `
+                    <div class="modal-box" style="text-align:center;">
+                        <h2>🔥 Racha</h2>
+                        <p>Cuenta los días seguidos que ganas al menos un reto, en cualquiera de los 4 juegos (no hace falta ganarlos todos, con uno vale).</p>
+                        <p>Si un día no ganas ninguno, la racha vuelve a empezar desde 0 al día siguiente.</p>
+                        <p style="color:var(--sand); font-weight:bold; margin-top:10px;">Tu racha actual: 🔥${s.count}</p>
+                        <button class="btn-action" onclick="document.getElementById('streak-info-overlay').remove()">ENTENDIDO</button>
+                    </div>
+                `;
+                document.body.appendChild(el);
             },
             init() { this.updateBadge(); }
         };
