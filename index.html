@@ -64,9 +64,18 @@
             font-size: 2.4rem; width: 64px; height: 64px; flex-shrink: 0;
             display: flex; align-items: center; justify-content: center;
             background: rgba(0,0,0,0.25); border: 2px solid var(--border-metal); border-radius: 12px;
-            transition: opacity 0.3s, filter 0.3s;
+            position: relative; overflow: hidden;
         }
-        .emoji-slot-hidden { opacity: 0.4; filter: blur(1.5px); color: #888; }
+        .emoji-slot-hidden { background: transparent; color: #d8cfc0; }
+        .emoji-slot-bg { position: absolute; inset: -6px; background: rgba(157,78,221,0.22); filter: blur(4px); }
+        .emoji-slot-mark { position: relative; z-index: 1; }
+
+        .streak-badge {
+            display: inline-flex; align-items: center; gap: 2px;
+            font-size: 0.8rem; font-weight: bold; color: var(--sand);
+            background: rgba(194,178,128,0.1); border: 1px solid var(--border-metal);
+            border-radius: 20px; padding: 3px 8px; white-space: nowrap;
+        }
 
         .header-side { display: flex; align-items: center; gap: 0.5rem; min-width: 90px; }
         .header-side.right { justify-content: flex-end; }
@@ -279,6 +288,7 @@
             header { padding: 0.7rem; }
             .icon-btn { width: 30px; height: 30px; font-size: 0.9rem; }
             .header-side { min-width: 68px; gap: 0.35rem; }
+            .streak-badge { font-size: 0.7rem; padding: 2px 6px; }
             .key { height: 44px; font-size: 0.8rem; }
             .key-row { gap: 3px; }
             .card { padding: 1.1rem; }
@@ -321,6 +331,7 @@
         <div class="header-side">
             <button class="icon-btn" onclick="HowTo.show()" title="Cómo jugar" aria-label="Cómo jugar">?</button>
             <button class="icon-btn" id="mute-btn" onclick="SoundManager.toggle()" title="Silenciar sonido" aria-label="Silenciar sonido">🔊</button>
+            <span id="streak-badge" class="streak-badge" title="Tu racha de días jugando">🔥0</span>
         </div>
         <h1 class="logo" onclick="Router.go('home')">DUNEDLE <span class="beta-badge">BETA v0.6</span></h1>
         <div class="header-side right">
@@ -988,7 +999,7 @@
                 }
                 if(this.state.finished && !this.state.statsRecorded) {
                     StatsManager.record('wordle', this.state.won, this.state.guesses.length);
-                    if(this.state.won) FactionWar.recordWin('wordle');
+                    if(this.state.won) { FactionWar.recordWin('wordle'); GlobalStreak.recordWin(); }
                     this.state.statsRecorded = true;
                 }
                 Daily.saveState('wordle', this.state); this.current = "";
@@ -1043,7 +1054,9 @@
                         <h2>PERSONAJE DEL DÍA</h2>
                         <div class="emoji-slots">${this.target.emojis.map((e, i) => {
                             const revealed = i < this.state.history.length + 1;
-                            return `<div class="emoji-slot ${revealed ? '' : 'emoji-slot-hidden'}">${revealed ? e : '❓'}</div>`;
+                            return revealed
+                                ? `<div class="emoji-slot">${e}</div>`
+                                : `<div class="emoji-slot emoji-slot-hidden"><span class="emoji-slot-bg"></span><span class="emoji-slot-mark">❓</span></div>`;
                         }).join('')}</div>
                         <div class="input-group" style="margin:0 auto"><input type="text" id="e-input" placeholder="Nombre..." autocomplete="off"><div id="e-sugg" class="suggestions"></div></div>
                         <button class="btn-action" onclick="EmojiGame.check()">COMPROBAR</button>
@@ -1067,7 +1080,7 @@
                 }
                 if(this.state.finished && !this.state.statsRecorded) {
                     StatsManager.record('emoji', true, this.state.history.length + 1);
-                    FactionWar.recordWin('emoji');
+                    FactionWar.recordWin('emoji'); GlobalStreak.recordWin();
                     this.state.statsRecorded = true;
                 }
                 Daily.saveState('emoji', this.state); this.render(document.getElementById('view-port'));
@@ -1125,7 +1138,7 @@
                 }
                 if(this.state.finished && !this.state.statsRecorded) {
                     StatsManager.record('quote', true, this.state.history.length + 1);
-                    FactionWar.recordWin('quote');
+                    FactionWar.recordWin('quote'); GlobalStreak.recordWin();
                     this.state.statsRecorded = true;
                 }
                 Daily.saveState('quote', this.state); this.render(document.getElementById('view-port'));
@@ -1283,7 +1296,7 @@
                 }
                 if(this.state.finished && !this.state.statsRecorded){
                     StatsManager.record('character', true, this.state.rows.length);
-                    FactionWar.recordWin('character');
+                    FactionWar.recordWin('character'); GlobalStreak.recordWin();
                     this.state.statsRecorded = true;
                 }
                 Daily.saveState('character', this.state);
@@ -1438,6 +1451,34 @@
             absent() { this.tap(4); },
             win() { this.tap([20, 30, 20, 30, 50]); },
             wrong() { this.tap([15, 40, 15]); }
+        };
+
+        /* --- RACHA GLOBAL (días consecutivos jugando, en cualquier juego) --- */
+        const GlobalStreak = {
+            key: 'dunedle_global_streak',
+            get() {
+                const raw = localStorage.getItem(this.key);
+                return raw ? JSON.parse(raw) : { count: 0, lastDate: null };
+            },
+            save(s) { localStorage.setItem(this.key, JSON.stringify(s)); },
+            recordWin() {
+                const s = this.get();
+                const today = todayStr();
+                if(s.lastDate === today) { this.updateBadge(); return; } // ya contado hoy
+                const gap = s.lastDate ? daysBetween(s.lastDate) : null;
+                s.count = (gap === 1) ? s.count + 1 : 1;
+                s.lastDate = today;
+                this.save(s);
+                this.updateBadge();
+            },
+            updateBadge() {
+                const el = document.getElementById('streak-badge');
+                if(!el) return;
+                const s = this.get();
+                el.textContent = `🔥${s.count}`;
+                el.style.display = 'inline-flex';
+            },
+            init() { this.updateBadge(); }
         };
 
         const SoundManager = {
@@ -1873,7 +1914,7 @@
 
         window.onload = () => {
             Spice.init(); Confetti.init(); ThemeManager.init(); SoundManager.init();
-            FactionChoice.init(); FactionWar.init();
+            FactionChoice.init(); FactionWar.init(); GlobalStreak.init();
             Router.go('home'); HowTo.maybeShowFirstTime();
         };
     </script>
