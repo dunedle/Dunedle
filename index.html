@@ -262,7 +262,7 @@
             .victory-panel.who-is-panel { max-width: 900px; }
             .who-is-panel .btn-action, .who-is-panel .share-btn { width: 400px !important; max-width: 400px !important; margin-left: auto !important; margin-right: auto !important; display: block; }
         }
-        .char-grid { display: inline-grid; grid-auto-flow: row; grid-template-columns: 130px repeat(6, 100px); gap: 6px; min-width: 100%; }
+        .char-grid { display: inline-grid; grid-auto-flow: row; grid-template-columns: 130px repeat(5, 100px); gap: 6px; min-width: 100%; }
         .char-cell {
             background: var(--panel-gray); border: 2px solid var(--border-metal); border-radius: 8px;
             padding: 10px 6px; text-align: center; font-size: 0.75rem; line-height: 1.25;
@@ -1101,7 +1101,7 @@
             target: null, state: null,
             hintDefs: [
                 { key: 'org', label: 'Facción', icon: '🏛️' },
-                { key: 'movie', label: 'Película', icon: '🎬' },
+                { key: 'gender', label: 'Género', icon: '🚻' },
                 { key: 'first', label: 'Libro', icon: '📖' }
             ],
             init(container) {
@@ -1171,6 +1171,36 @@
             }
         };
 
+        // Base de datos EXCLUSIVA para "¿Quién es?": solo personajes que de verdad
+        // aparecen en las películas de Denis Villeneuve (Dune 2021 / Parte Dos 2024),
+        // con datos basados en cómo se ven EN PANTALLA (actor/actriz, aspecto del
+        // personaje), que a veces difieren del libro — por ejemplo Liet-Kynes es
+        // mujer en la película, y el Conde Fenring se rodó pero se cortó del montaje
+        // final, así que no aparece. No toca ni sustituye la base de datos del libro
+        // que usan Personaje del día ni Frase del día.
+        const DUNEDATA_MOVIE_CHARACTERS = [
+            { name: "Paul Atreides", emojis: ["👑", "🏜️", "👁️", "🐭"], desc: "Interpretado por Timothée Chalamet.", org: "Casa Atreides", planet: "Arrakis", gender: "Hombre", height: 178, hairColor: "Castaño", movie: "Ambas películas" },
+            { name: "Leto Atreides", emojis: ["🐂", "💍", "🗡️", "🏛️"], desc: "Interpretado por Oscar Isaac.", org: "Casa Atreides", planet: "Caladan", gender: "Hombre", height: 174, hairColor: "Negro", movie: "Solo Dune (2021)" },
+            { name: "Lady Jessica", emojis: ["👩‍🏫", "🧘", "🤰", "💧"], desc: "Interpretada por Rebecca Ferguson.", org: "Bene Gesserit", planet: "Caladan", gender: "Mujer", height: 168, hairColor: "Castaño", movie: "Ambas películas" },
+            { name: "Stilgar", emojis: ["🧔", "💧", "🏜️", "🛡️"], desc: "Interpretado por Javier Bardem.", org: "Fremen", planet: "Arrakis", gender: "Hombre", height: 182, hairColor: "Negro", movie: "Ambas películas" },
+            { name: "Duncan Idaho", emojis: ["⚔️", "🔁", "💀", "🛡️"], desc: "Interpretado por Jason Momoa.", org: "Casa Atreides", planet: "Caladan", gender: "Hombre", height: 193, hairColor: "Negro", movie: "Solo Dune (2021)" },
+            { name: "Gurney Halleck", emojis: ["🎸", "🗡️", "😠", "🤎"], desc: "Interpretado por Josh Brolin.", org: "Casa Atreides", planet: "Caladan", gender: "Hombre", height: 177, hairColor: "Rubio", movie: "Ambas películas" },
+            { name: "Barón Vladimir Harkonnen", emojis: ["🦈", "🛢️", "🖤", "👑"], desc: "Interpretado por Stellan Skarsgård.", org: "Casa Harkonnen", planet: "Giedi Prime", gender: "Hombre", height: 191, hairColor: "Calvo", movie: "Ambas películas" },
+            { name: "Feyd-Rautha", emojis: ["🗡️", "😈", "👑", "🩸"], desc: "Interpretado por Austin Butler.", org: "Casa Harkonnen", planet: "Giedi Prime", gender: "Hombre", height: 183, hairColor: "Calvo", movie: "Solo Parte Dos (2024)" },
+            { name: "Chani", emojis: ["💧", "🏜️", "❤️", "🗡️"], desc: "Interpretada por Zendaya.", org: "Fremen", planet: "Arrakis", gender: "Mujer", height: 178, hairColor: "Negro", movie: "Ambas películas" },
+            { name: "Liet-Kynes", emojis: ["🌱", "🏜️", "🔬", "🕊️"], desc: "Interpretada por Sharon Duncan-Brewster. En la película, a diferencia del libro, Liet-Kynes es mujer.", org: "Fremen / Imperio", planet: "Arrakis", gender: "Mujer", height: 168, hairColor: "Negro", movie: "Solo Dune (2021)" },
+            { name: "Princesa Irulan", emojis: ["📜", "👑", "✍️", "💍"], desc: "Interpretada por Florence Pugh.", org: "Casa Corrino", planet: "Kaitain", gender: "Mujer", height: 159, hairColor: "Rubio", movie: "Solo Parte Dos (2024)" },
+            { name: "Thufir Hawat", emojis: ["🗡️", "🧠", "👴", "🛡️"], desc: "Interpretado por Stephen McKinley Henderson.", org: "Casa Atreides", planet: "Caladan", gender: "Hombre", height: 173, hairColor: "Canoso", movie: "Ambas películas" },
+            { name: "Piter De Vries", emojis: ["🧠", "😏", "💉", "🖤"], desc: "Interpretado por David Dastmalchian.", org: "Casa Harkonnen", planet: "Giedi Prime", gender: "Hombre", height: 173, hairColor: "Negro", movie: "Solo Dune (2021)" },
+            { name: "Wellington Yueh", emojis: ["💊", "😢", "🩺", "💔"], desc: "Interpretado por Chang Chen.", org: "Casa Atreides", planet: "Caladan", gender: "Hombre", height: 173, hairColor: "Negro", movie: "Solo Dune (2021)" },
+            { name: "Glossu Rabban", emojis: ["🐗", "⚔️", "😡", "🛢️"], desc: "Interpretado por Dave Bautista.", org: "Casa Harkonnen", planet: "Giedi Prime", gender: "Hombre", height: 190, hairColor: "Calvo", movie: "Ambas películas" },
+            { name: "Jamis", emojis: ["🗡️", "🏜️", "⚱️", "🌙"], desc: "Interpretado por Babs Olusanmokun.", org: "Fremen", planet: "Arrakis", gender: "Hombre", height: 180, hairColor: "Negro", movie: "Solo Dune (2021)" },
+            { name: "Lady Margot Fenring", emojis: ["🧘", "👗", "🔮", "👑"], desc: "Interpretada por Léa Seydoux.", org: "Bene Gesserit", planet: "Kaitain", gender: "Mujer", height: 168, hairColor: "Rubio", movie: "Solo Parte Dos (2024)" },
+            { name: "Shaddam IV", emojis: ["👑", "⚔️", "🏛️", "😨"], desc: "Interpretado por Christopher Walken.", org: "Casa Corrino", planet: "Kaitain", gender: "Hombre", height: 179, hairColor: "Canoso", movie: "Solo Parte Dos (2024)" },
+            { name: "Gaius Helen Mohiam", emojis: ["🧘", "💉", "👵", "🖤"], desc: "Interpretada por Charlotte Rampling.", org: "Bene Gesserit", planet: "Wallach IX", gender: "Mujer", height: 170, hairColor: "Canoso", movie: "Ambas películas" },
+            { name: "Shadout Mapes", emojis: ["🏠", "🗡️", "🧕", "🔑"], desc: "Interpretada por Golda Rosheuvel.", org: "Fremen", planet: "Arrakis", gender: "Mujer", height: 168, hairColor: "Negro", movie: "Solo Dune (2021)" }
+        ];
+
         const CharacterGuessGame = {
             target: null, state: null, isSubmitting: false,
             fields: [
@@ -1178,11 +1208,10 @@
                 { key: 'height', label: 'Altura', numeric: true },
                 { key: 'org', label: 'Facción' },
                 { key: 'hairColor', label: 'Pelo' },
-                { key: 'movie', label: 'Película' },
-                { key: 'first', label: 'Libro' }
+                { key: 'movie', label: 'Película' }
             ],
             init(container) {
-                this.target = DUNEDATA_CHARACTERS[Daily.getIndex(DUNEDATA_CHARACTERS, 7)];
+                this.target = DUNEDATA_MOVIE_CHARACTERS[Daily.getIndex(DUNEDATA_MOVIE_CHARACTERS, 7)];
                 this.state = Daily.getState('character');
                 if(!this.state.rows) this.state.rows = [];
                 this.isSubmitting = false;
@@ -1197,7 +1226,7 @@
                             <div class="meta-tags">
                                 <span class="meta-tag">🏛️ ${this.target.org}</span>
                                 <span class="meta-tag">🪐 ${this.target.planet}</span>
-                                <span class="meta-tag">📖 ${this.target.first}</span>
+                                <span class="meta-tag">🎬 ${this.target.movie}</span>
                             </div>
                             <div class="lore-box">${this.target.desc}</div>
                             <button class="share-btn" onclick="CharacterGuessGame.share()">📸 Compartir resultado</button>
@@ -1218,7 +1247,7 @@
                         <div class="char-table-wrap">${this.tableHTML()}</div>
                     </div>
                 `;
-                setupNameSearch('c-input', 'c-sugg', DUNEDATA_CHARACTERS.map(c => c.name), () => this.check());
+                setupNameSearch('c-input', 'c-sugg', DUNEDATA_MOVIE_CHARACTERS.map(c => c.name), () => this.check());
                 document.getElementById('c-input').focus();
             },
             tableHTML() {
@@ -1232,9 +1261,9 @@
                 return `<div class="char-cell name-cell">${row.name}</div>${cells}`;
             },
             findCharacter(guessRaw) {
-                const resolved = resolveNameGuess(guessRaw, DUNEDATA_CHARACTERS.map(c => c.name));
+                const resolved = resolveNameGuess(guessRaw, DUNEDATA_MOVIE_CHARACTERS.map(c => c.name));
                 if(!resolved) return null;
-                return DUNEDATA_CHARACTERS.find(c => c.name === resolved) || null;
+                return DUNEDATA_MOVIE_CHARACTERS.find(c => c.name === resolved) || null;
             },
             buildRow(guessed) {
                 const cells = this.fields.map(f => {
@@ -1344,13 +1373,21 @@
 
         // Busca por inicio de palabra: prioriza nombres/apellidos que EMPIEZAN por lo escrito,
         // en vez de cualquier nombre que simplemente contenga esa letra en cualquier parte.
-        // Solo sugiere nombres que EMPIEZAN por lo escrito (no vale con que una palabra
-        // cualquiera del nombre, como el apellido, empiece por esa letra).
+        // Quita tildes/diacríticos y pasa a minúsculas, para que "Baron" encuentre "Barón".
+        function foldAccents(str) {
+            return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        }
+
+        // Sugiere nombres cuyo nombre completo empieza por lo escrito, y también nombres
+        // donde CUALQUIER palabra (nombre, apellido, título) empieza por lo escrito —
+        // por ejemplo "vladimir" o "v" encuentran "Barón Vladimir Harkonnen". Ignora tildes.
+        // Solo sugiere nombres que EMPIEZAN por lo escrito (no por una palabra suelta
+        // dentro del nombre, como el apellido). Sí ignora tildes.
         function smartNameSearch(names, query, limit) {
-            const val = query.toLowerCase().trim();
+            const val = foldAccents(query.trim());
             if(!val) return [];
             return names
-                .filter(n => n.toLowerCase().startsWith(val))
+                .filter(n => foldAccents(n).startsWith(val))
                 .slice(0, limit || 5);
         }
 
@@ -1383,13 +1420,13 @@
         // pero solo si esa palabra no se repite en ninguna otra entrada de la lista (si no, es ambigua
         // y hay que escribir el nombre completo para desempatar).
         function resolveNameGuess(guess, names) {
-            const g = guess.trim().toLowerCase();
+            const g = foldAccents(guess.trim());
             if(!g) return null;
-            const exact = names.find(n => n.trim().toLowerCase() === g);
+            const exact = names.find(n => foldAccents(n.trim()) === g);
             if(exact) return exact;
             const owners = {};
             names.forEach(n => {
-                n.trim().toLowerCase().split(/[\s-]+/).forEach(word => {
+                foldAccents(n.trim()).split(/[\s-]+/).forEach(word => {
                     if(!owners[word]) owners[word] = new Set();
                     owners[word].add(n);
                 });
@@ -1760,7 +1797,7 @@
                         <h3>💬 Frase del día</h3>
                         <p>Lee la cita y adivina quién la dijo, con ayuda del buscador de nombres.</p>
                         <h3>🕵️ ¿Quién es?</h3>
-                        <p>Escribe un nombre y compara sus datos (género, altura, facción, pelo, película, libro) con el personaje del día. En verde lo que coincide, en rojo lo que no. La altura además te indica con una flecha si el personaje objetivo es más alto o más bajo.</p>
+                        <p>Escribe un nombre y compara sus datos (género, altura, facción, pelo, película) con el personaje del día. Solo salen personajes que aparecen de verdad en las películas de Dune. En verde lo que coincide, en rojo lo que no. La altura además te indica con una flecha si el personaje objetivo es más alto o más bajo.</p>
                         <p style="margin-top:0.8rem; color:var(--sand);">Todos los retos se reinician cada día a medianoche.</p>
                         <button class="btn-action" onclick="HowTo.close()">ENTENDIDO</button>
                     </div>
