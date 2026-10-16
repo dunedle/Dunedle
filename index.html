@@ -2012,6 +2012,7 @@
             renderDuel() {
                 const q = KanlyGame.currentQuestion();
                 if(!q){ this.endDuel(); return; }
+                const oppScore = (this.opponentData && this.opponentData.scores) ? (this.opponentData.scores[KanlyGame.opponentId] || 0) : 0;
                 const promptHTML = q.type === 'emoji'
                     ? `<div class="kanly-question-emojis">${q.prompt}</div><p style="color:#999;">¿Quién es?</p>`
                     : `<p class="kanly-question-quote">"${q.prompt}"</p><p style="color:#999; margin-top:6px;">¿Quién lo dijo?</p>`;
@@ -2021,7 +2022,7 @@
                         <div class="kanly-vs">
                             <div class="kanly-player me"><div class="kanly-score" id="kanly-my-score">${KanlyGame.myScore}</div><div class="kanly-label">Tú</div></div>
                             <div class="kanly-vs-divider">VS</div>
-                            <div class="kanly-player"><div class="kanly-score" id="kanly-opp-score">0</div><div class="kanly-label">Rival</div></div>
+                            <div class="kanly-player"><div class="kanly-score" id="kanly-opp-score">${oppScore}</div><div class="kanly-label">Rival</div></div>
                         </div>
                         <div class="kanly-question-box">${promptHTML}</div>
                         <div class="kanly-options" id="kanly-options">
