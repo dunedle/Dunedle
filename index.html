@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <link rel="icon" type="image/png" href="./favicon.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dunedle — Juegos diarios de Dune</title>
@@ -75,6 +74,32 @@
         .hint-chip { font-size: 0.78rem; padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border-metal); }
         .hint-chip.hint-unlocked { background: rgba(74,222,128,0.12); border-color: var(--correct); color: var(--text-white); }
         .hint-chip.hint-locked { background: rgba(0,0,0,0.2); color: #777; }
+
+        .kanly-vs { display: flex; justify-content: space-between; align-items: center; margin: 10px 0 18px; gap: 10px; }
+        .kanly-player { flex: 1; text-align: center; padding: 10px; border-radius: 10px; background: rgba(0,0,0,0.25); border: 2px solid var(--border-metal); }
+        .kanly-player.me { border-color: var(--sand); }
+        .kanly-player .kanly-score { font-size: 1.8rem; font-weight: bold; color: var(--sand); }
+        .kanly-player .kanly-label { font-size: 0.75rem; color: #999; text-transform: uppercase; letter-spacing: 1px; }
+        .kanly-vs-divider { font-size: 1.1rem; color: var(--spice); font-weight: bold; }
+        .kanly-timer { text-align: center; font-size: 2.2rem; font-weight: bold; color: var(--sand); margin-bottom: 14px; font-variant-numeric: tabular-nums; }
+        .kanly-timer.low { color: #ef4444; animation: cellPop 0.5s infinite; }
+        .kanly-question-box { text-align: center; margin: 10px 0 20px; }
+        .kanly-question-emojis { font-size: 2.8rem; margin-bottom: 10px; }
+        .kanly-question-quote { font-style: italic; font-size: 1.1rem; color: var(--sand); }
+        .kanly-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .kanly-option {
+            background: var(--panel-gray); border: 2px solid var(--border-metal); border-radius: 10px;
+            padding: 14px 8px; font-size: 0.9rem; font-weight: bold; color: var(--text-white); cursor: pointer;
+        }
+        .kanly-option:active { transform: scale(0.97); }
+        .kanly-option.correct { background: var(--correct); border-color: var(--correct); color: #06240f; }
+        .kanly-option.wrong { background: #3a1414; border-color: #7a2323; color: #f2b8b8; }
+        .kanly-spinner { width: 46px; height: 46px; border: 4px solid var(--border-metal); border-top-color: var(--sand); border-radius: 50%; margin: 20px auto; animation: kanlySpin 1s linear infinite; }
+        @keyframes kanlySpin { to { transform: rotate(360deg); } }
+        .kanly-result-title { font-size: 1.6rem; font-weight: bold; margin: 10px 0; }
+        .kanly-result-title.win { color: var(--correct); }
+        .kanly-result-title.lose { color: #ef4444; }
+        .kanly-result-title.tie { color: var(--sand); }
 
         .streak-badge {
             display: inline-flex; align-items: center; gap: 2px;
@@ -263,7 +288,7 @@
             .victory-panel.who-is-panel { max-width: 900px; }
             .who-is-panel .btn-action, .who-is-panel .share-btn { width: 400px !important; max-width: 400px !important; margin-left: auto !important; margin-right: auto !important; display: block; }
         }
-        .char-grid { display: inline-grid; grid-auto-flow: row; grid-template-columns: 130px repeat(5, 100px); gap: 6px; min-width: 100%; }
+        .char-grid { display: inline-grid; grid-auto-flow: row; grid-template-columns: 130px repeat(6, 100px); gap: 6px; min-width: 100%; }
         .char-cell {
             background: var(--panel-gray); border: 2px solid var(--border-metal); border-radius: 8px;
             padding: 10px 6px; text-align: center; font-size: 0.75rem; line-height: 1.25;
@@ -339,7 +364,7 @@
             <button class="icon-btn" id="mute-btn" onclick="SoundManager.toggle()" title="Silenciar sonido" aria-label="Silenciar sonido">🔊</button>
             <span id="streak-badge" class="streak-badge" title="Tu racha de días jugando" onclick="GlobalStreak.showInfo()" style="cursor:pointer;">🔥0</span>
         </div>
-        <h1 class="logo" onclick="Router.go('home')">DUNEDLE <span class="beta-badge">BETA v0.6</span></h1>
+        <h1 class="logo" onclick="Router.go('home')">DUNEDLE <span class="beta-badge">BETA v0.7</span></h1>
         <div class="header-side right">
             <div id="theme-selector-slot">
                 <button class="icon-btn" onclick="FactionChoice.show(false)" title="Elegir facción" aria-label="Elegir facción">⚔️</button>
@@ -451,35 +476,59 @@
             { word: "TRAICION", desc: "Lo que el médico Yueh comete contra la Casa Atreides." },
             { word: "VENGANZA", desc: "Lo que impulsa a Paul tras la caída de su casa." },
             { word: "PROFECIA", desc: "La leyenda fremen sobre un mesías del mundo exterior." },
-            { word: "MISIONARIA", desc: "El programa Bene Gesserit que sembró falsas profecías entre los fremen." }
+            { word: "MISIONARIA", desc: "El programa Bene Gesserit que sembró falsas profecías entre los fremen." },
+            { word: "KORBA", desc: "Dirigente religioso del movimiento de Muad'Dib implicado en una conspiración." },
+            { word: "BANNERJEE", desc: "Responsable de la seguridad del Emperador en su palacio de Arrakeen." },
+            { word: "DHURI", desc: "Esposa del fedaykin Otheym." },
+            { word: "LETO II", desc: "El hijo de Paul y Chani cuyo nacimiento es decisivo en la historia." },
+            { word: "GHANIMA", desc: "Hija de Paul y Chani, hermana gemela de Leto II." },
+            { word: "HAYT", desc: "Nombre que recibe el ghola de Duncan Idaho entregado a Paul por los tleilaxu." },
+            { word: "SCYTALE", desc: "Danzarín Rostro tleilaxu que conspira contra Paul Atreides." },
+            { word: "EDRIC", desc: "El navegante de la Cofradía que ayuda a ocultar la conspiración." },
+            { word: "BIJAZ", desc: "Enigmático tleilaxu de baja estatura, clave en el plan contra Paul." },
+            { word: "OTHEYM", desc: "El antiguo fedaykin que advierte a Paul de la conspiración." },
+            { word: "LICHNA", desc: "La hija de Otheym cuya identidad se usa para engañar a Paul." },
+            { word: "FAROK", desc: "Veterano de la yihad que acaba conspirando contra Paul." }
         ];
 
         const DUNEDATA_CHARACTERS = [
-            { name: "Paul Atreides", emojis: ["👑", "🏜️", "👁️", "🐭"], desc: "El Kwisatz Haderach y Mesías Fremen.", org: "Casa Atreides", planet: "Arrakis", first: "Dune", gender: "Hombre", height: 180, hairColor: "Castaño", movie: "Ambas películas" },
-            { name: "Leto Atreides", emojis: ["🐂", "💍", "🗡️", "🏛️"], desc: "El Duque Rojo, padre de Paul.", org: "Casa Atreides", planet: "Caladan", first: "Dune", gender: "Hombre", height: 183, hairColor: "Negro", movie: "Solo Dune (2021)" },
-            { name: "Lady Jessica", emojis: ["👩‍🏫", "🧘", "🤰", "💧"], desc: "Reverenda Madre y madre de Paul.", org: "Bene Gesserit", planet: "Caladan", first: "Dune", gender: "Mujer", height: 170, hairColor: "Rubio bronce", movie: "Ambas películas" },
-            { name: "Stilgar", emojis: ["🧔", "💧", "🏜️", "🛡️"], desc: "Naib del Sietch Tabr.", org: "Fremen", planet: "Arrakis", first: "Dune", gender: "Hombre", height: 178, hairColor: "Negro", movie: "Ambas películas" },
-            { name: "Duncan Idaho", emojis: ["⚔️", "🔁", "💀", "🛡️"], desc: "El espadachín leal de los Atreides, más tarde resucitado como ghola.", org: "Casa Atreides", planet: "Caladan", first: "Dune", gender: "Hombre", height: 185, hairColor: "Negro rizado", movie: "Solo Dune (2021)" },
-            { name: "Gurney Halleck", emojis: ["🎸", "🗡️", "😠", "🤎"], desc: "Maestro de armas y trovador de la Casa Atreides.", org: "Casa Atreides", planet: "Caladan", first: "Dune", gender: "Hombre", height: 188, hairColor: "Rubio rojizo", movie: "Ambas películas" },
-            { name: "Barón Vladimir Harkonnen", emojis: ["🦈", "🛢️", "🖤", "👑"], desc: "El cruel y astuto señor de la Casa Harkonnen.", org: "Casa Harkonnen", planet: "Giedi Prime", first: "Dune", gender: "Hombre", height: 160, hairColor: "Calvo", movie: "Solo Parte Dos (2024)" },
-            { name: "Feyd-Rautha", emojis: ["🗡️", "😈", "👑", "🩸"], desc: "El sobrino ambicioso y letal del Barón Harkonnen.", org: "Casa Harkonnen", planet: "Giedi Prime", first: "Dune", gender: "Hombre", height: 175, hairColor: "Castaño", movie: "Solo Parte Dos (2024)" },
-            { name: "Chani", emojis: ["💧", "🏜️", "❤️", "🗡️"], desc: "Guerrera fremen y compañera de Paul.", org: "Fremen", planet: "Arrakis", first: "Dune", gender: "Mujer", height: 160, hairColor: "Negro", movie: "Ambas películas" },
-            { name: "Liet-Kynes", emojis: ["🌱", "🏜️", "🔬", "🕊️"], desc: "Planetólogo imperial con lealtad secreta a los fremen.", org: "Fremen / Imperio", planet: "Arrakis", first: "Dune", gender: "Hombre", height: 180, hairColor: "Rubio", movie: "Solo Dune (2021)" },
-            { name: "Princesa Irulan", emojis: ["📜", "👑", "✍️", "💍"], desc: "Cronista imperial e hija del Emperador Shaddam IV.", org: "Casa Corrino", planet: "Kaitain", first: "Dune", gender: "Mujer", height: 172, hairColor: "Rubio dorado", movie: "Solo Parte Dos (2024)" },
-            { name: "Thufir Hawat", emojis: ["🗡️", "🧠", "👴", "🛡️"], desc: "El anciano mentat y maestro de asesinos leal a la Casa Atreides.", org: "Casa Atreides", planet: "Caladan", first: "Dune", gender: "Hombre", height: 175, hairColor: "Canoso", movie: "Ambas películas" },
-            { name: "Piter De Vries", emojis: ["🧠", "😏", "💉", "🖤"], desc: "El retorcido mentat pervertido al servicio del Barón Harkonnen.", org: "Casa Harkonnen", planet: "Giedi Prime", first: "Dune", gender: "Hombre", height: 178, hairColor: "Negro", movie: "Solo Dune (2021)" },
-            { name: "Wellington Yueh", emojis: ["💊", "😢", "🩺", "💔"], desc: "El médico Suk que traiciona a los Atreides bajo coacción.", org: "Casa Atreides", planet: "Caladan", first: "Dune", gender: "Hombre", height: 170, hairColor: "Gris", movie: "Solo Dune (2021)" },
-            { name: "Glossu Rabban", emojis: ["🐗", "⚔️", "😡", "🛢️"], desc: "El brutal sobrino del Barón que gobierna Arrakis con puño de hierro.", org: "Casa Harkonnen", planet: "Giedi Prime", first: "Dune", gender: "Hombre", height: 190, hairColor: "Calvo", movie: "Solo Parte Dos (2024)" },
-            { name: "Jamis", emojis: ["🗡️", "🏜️", "⚱️", "🌙"], desc: "El fremen que desafía a Paul a un duelo hasta la muerte.", org: "Fremen", planet: "Arrakis", first: "Dune", gender: "Hombre", height: 178, hairColor: "Negro", movie: "Solo Dune (2021)" },
-            { name: "Harah", emojis: ["🏠", "🧕", "🗡️", "👧"], desc: "La viuda de Jamis que cuida el hogar de Paul en el sietch.", org: "Fremen", planet: "Arrakis", first: "Dune", gender: "Mujer", height: 158, hairColor: "Negro", movie: "No aparece en las películas" },
-            { name: "Conde Hasimir Fenring", emojis: ["🕴️", "🗡️", "👑", "🤫"], desc: "El astuto confidente y agente secreto del Emperador Shaddam IV.", org: "Casa Corrino", planet: "Kaitain", first: "Dune", gender: "Hombre", height: 165, hairColor: "Castaño", movie: "Solo Parte Dos (2024)" },
-            { name: "Lady Margot Fenring", emojis: ["🧘", "👗", "🔮", "👑"], desc: "Dama Bene Gesserit y esposa del Conde Fenring.", org: "Bene Gesserit", planet: "Kaitain", first: "Dune", gender: "Mujer", height: 168, hairColor: "Rubio", movie: "Solo Parte Dos (2024)" },
-            { name: "Shaddam IV", emojis: ["👑", "⚔️", "🏛️", "😨"], desc: "El Padishah Emperador que gobierna todo el Imperio conocido.", org: "Casa Corrino", planet: "Kaitain", first: "Dune", gender: "Hombre", height: 178, hairColor: "Rubio", movie: "Solo Parte Dos (2024)" },
-            { name: "Gaius Helen Mohiam", emojis: ["🧘", "💉", "👵", "🖤"], desc: "La Reverenda Madre que somete a Paul a la prueba del Gom Jabbar.", org: "Bene Gesserit", planet: "Wallach IX", first: "Dune", gender: "Mujer", height: 160, hairColor: "Canoso", movie: "Ambas películas" },
-            { name: "Alia Atreides", emojis: ["👶", "🧠", "🗡️", "🌙"], desc: "La hermana de Paul, nacida con plena consciencia por la especia.", org: "Casa Atreides", planet: "Arrakis", first: "Dune", gender: "Mujer", height: 90, hairColor: "Cobrizo", movie: "Solo Parte Dos (2024)" },
-            { name: "Shadout Mapes", emojis: ["🏠", "🗡️", "🧕", "🔑"], desc: "El ama de llaves de la residencia Atreides en Arrakeen, de origen fremen.", org: "Fremen", planet: "Arrakis", first: "Dune", gender: "Mujer", height: 162, hairColor: "Negro", movie: "Solo Dune (2021)" },
-            { name: "Esmar Tuek", emojis: ["🚢", "🤝", "🏜️", "🕶️"], desc: "El líder contrabandista que da refugio a los supervivientes Atreides.", org: "Contrabandistas", planet: "Arrakis", first: "Dune", gender: "Hombre", height: 176, hairColor: "Gris", movie: "No aparece en las películas" },
-            { name: "Iakin Nefud", emojis: ["🛡️", "😰", "🏰", "⚔️"], desc: "El capitán de la guardia harkonnen en Arrakeen.", org: "Casa Harkonnen", planet: "Giedi Prime", first: "Dune", gender: "Hombre", height: 172, hairColor: "Castaño", movie: "No aparece en las películas" }
+            { name: "Paul Atreides", emojis: ["🏜️","👁️","🐭","⚔️"], desc: "El Kwisatz Haderach y Mesías Fremen.", org: "Casa Atreides", planet: "Arrakis", first: "Dune", gender: "Hombre", height: 180, hairColor: "Castaño", movie: "Ambas películas" },
+            { name: "Leto Atreides", emojis: ["🐂","🏛️","🛡️","👑"], desc: "El Duque Rojo, padre de Paul.", org: "Casa Atreides", planet: "Caladan", first: "Dune", gender: "Hombre", height: 183, hairColor: "Negro", movie: "Solo Dune (2021)" },
+            { name: "Lady Jessica", emojis: ["🧘","🧬","💧","👁️"], desc: "Reverenda Madre y madre de Paul.", org: "Bene Gesserit", planet: "Caladan", first: "Dune", gender: "Mujer", height: 170, hairColor: "Rubio bronce", movie: "Ambas películas" },
+            { name: "Stilgar", emojis: ["🏜️","💧","🛡️","🪱"], desc: "Naib del Sietch Tabr.", org: "Fremen", planet: "Arrakis", first: "Dune", gender: "Hombre", height: 178, hairColor: "Negro", movie: "Ambas películas" },
+            { name: "Duncan Idaho", emojis: ["⚔️","🛡️","🦅","🔁"], desc: "El espadachín leal de los Atreides, más tarde resucitado como ghola.", org: "Casa Atreides", planet: "Caladan", first: "Dune", gender: "Hombre", height: 185, hairColor: "Negro rizado", movie: "Solo Dune (2021)" },
+            { name: "Gurney Halleck", emojis: ["🎸","⚔️","🩹","🛡️"], desc: "Maestro de armas y trovador de la Casa Atreides.", org: "Casa Atreides", planet: "Caladan", first: "Dune", gender: "Hombre", height: 188, hairColor: "Rubio rojizo", movie: "Ambas películas" },
+            { name: "Barón Vladimir Harkonnen", emojis: ["🖤","🏛️","👑","🛢️"], desc: "El cruel y astuto señor de la Casa Harkonnen.", org: "Casa Harkonnen", planet: "Giedi Prime", first: "Dune", gender: "Hombre", height: 160, hairColor: "Calvo", movie: "Solo Parte Dos (2024)" },
+            { name: "Feyd-Rautha", emojis: ["⚔️","🩸","🪒","🖤"], desc: "El sobrino ambicioso y letal del Barón Harkonnen.", org: "Casa Harkonnen", planet: "Giedi Prime", first: "Dune", gender: "Hombre", height: 175, hairColor: "Castaño", movie: "Solo Parte Dos (2024)" },
+            { name: "Chani", emojis: ["🏜️","💧","⚔️","🐭"], desc: "Guerrera fremen y compañera de Paul.", org: "Fremen", planet: "Arrakis", first: "Dune", gender: "Mujer", height: 160, hairColor: "Negro", movie: "Ambas películas" },
+            { name: "Liet-Kynes", emojis: ["🌱","🏜️","🔬","🪱"], desc: "Planetólogo imperial con lealtad secreta a los fremen.", org: "Fremen / Imperio", planet: "Arrakis", first: "Dune", gender: "Hombre", height: 180, hairColor: "Rubio", movie: "Solo Dune (2021)" },
+            { name: "Princesa Irulan", emojis: ["👑","📜","✍️","🏛️"], desc: "Cronista imperial e hija del Emperador Shaddam IV.", org: "Casa Corrino", planet: "Kaitain", first: "Dune", gender: "Mujer", height: 172, hairColor: "Rubio dorado", movie: "Solo Parte Dos (2024)" },
+            { name: "Thufir Hawat", emojis: ["🧠","🧮","⚔️","🛡️"], desc: "El anciano mentat y maestro de asesinos leal a la Casa Atreides.", org: "Casa Atreides", planet: "Caladan", first: "Dune", gender: "Hombre", height: 175, hairColor: "Canoso", movie: "Ambas películas" },
+            { name: "Piter De Vries", emojis: ["🧠","🧪","💉","🖤"], desc: "El retorcido mentat pervertido al servicio del Barón Harkonnen.", org: "Casa Harkonnen", planet: "Giedi Prime", first: "Dune", gender: "Hombre", height: 178, hairColor: "Negro", movie: "Solo Dune (2021)" },
+            { name: "Wellington Yueh", emojis: ["🩺","💊","🩸","💔"], desc: "El médico Suk que traiciona a los Atreides bajo coacción.", org: "Casa Atreides", planet: "Caladan", first: "Dune", gender: "Hombre", height: 170, hairColor: "Gris", movie: "Solo Dune (2021)" },
+            { name: "Glossu Rabban", emojis: ["🐗","⚔️","🖤","🏜️"], desc: "El brutal sobrino del Barón que gobierna Arrakis con puño de hierro.", org: "Casa Harkonnen", planet: "Giedi Prime", first: "Dune", gender: "Hombre", height: 190, hairColor: "Calvo", movie: "Solo Parte Dos (2024)" },
+            { name: "Jamis", emojis: ["⚔️","🏜️","💧","⚱️"], desc: "El fremen que desafía a Paul a un duelo hasta la muerte.", org: "Fremen", planet: "Arrakis", first: "Dune", gender: "Hombre", height: 178, hairColor: "Negro", movie: "Solo Dune (2021)" },
+            { name: "Harah", emojis: ["🏠","🏜️","💧","👩‍👦"], desc: "La viuda de Jamis que cuida el hogar de Paul en el sietch.", org: "Fremen", planet: "Arrakis", first: "Dune", gender: "Mujer", height: 158, hairColor: "Negro", movie: "No aparece en las películas" },
+            { name: "Conde Hasimir Fenring", emojis: ["🕴️","👑","🕵️","🤫"], desc: "El astuto confidente y agente secreto del Emperador Shaddam IV.", org: "Casa Corrino", planet: "Kaitain", first: "Dune", gender: "Hombre", height: 165, hairColor: "Castaño", movie: "Solo Parte Dos (2024)" },
+            { name: "Lady Margot Fenring", emojis: ["🧘","🧬","🎭","👑"], desc: "Dama Bene Gesserit y esposa del Conde Fenring.", org: "Bene Gesserit", planet: "Kaitain", first: "Dune", gender: "Mujer", height: 168, hairColor: "Rubio", movie: "Solo Parte Dos (2024)" },
+            { name: "Shaddam IV", emojis: ["👑","🏛️","🦁","⚔️"], desc: "El Padishah Emperador que gobierna todo el Imperio conocido.", org: "Casa Corrino", planet: "Kaitain", first: "Dune", gender: "Hombre", height: 178, hairColor: "Rubio", movie: "Solo Parte Dos (2024)" },
+            { name: "Gaius Helen Mohiam", emojis: ["🧘","📦","🪡","🖤"], desc: "La Reverenda Madre que somete a Paul a la prueba del Gom Jabbar.", org: "Bene Gesserit", planet: "Wallach IX", first: "Dune", gender: "Mujer", height: 160, hairColor: "Canoso", movie: "Ambas películas" },
+            { name: "Alia Atreides", emojis: ["👶","🧠","🩸","🗡️"], desc: "La hermana de Paul, nacida con plena consciencia por la especia.", org: "Casa Atreides", planet: "Arrakis", first: "Dune", gender: "Mujer", height: 90, hairColor: "Cobrizo", movie: "Solo Parte Dos (2024)" },
+            { name: "Shadout Mapes", emojis: ["🏠","🗝️","🏜️","💧"], desc: "El ama de llaves de la residencia Atreides en Arrakeen, de origen fremen.", org: "Fremen", planet: "Arrakis", first: "Dune", gender: "Mujer", height: 162, hairColor: "Negro", movie: "Solo Dune (2021)" },
+            { name: "Korba", emojis: ["📜", "🏛️", "🏜️", "⚖️"], desc: "Dirigente religioso del movimiento de Muad'Dib que acaba implicado en la conspiración.", org: "Qizarate", planet: "Arrakis", first: "El Mesías de Dune", gender: "Hombre", height: 175, hairColor: "Negro", movie: "No aparece en las películas" },
+            { name: "Bannerjee", emojis: ["🛡️", "🏛️", "👁️", "⚔️"], desc: "Responsable de la seguridad imperial en Arrakeen.", org: "Casa Atreides / Imperio", planet: "Arrakis", first: "El Mesías de Dune", gender: "Hombre", height: 178, hairColor: "Negro", movie: "No aparece en las películas" },
+            { name: "Dhuri", emojis: ["🏠", "🏜️", "💧", "👩"], desc: "Esposa del fedaykin Otheym.", org: "Fremen", planet: "Arrakis", first: "El Mesías de Dune", gender: "Mujer", height: 160, hairColor: "Negro", movie: "No aparece en las películas" },
+            { name: "Leto II Atreides", emojis: ["👶", "👑", "🧬", "🌌"], desc: "Hijo de Paul y Chani, cuyo nacimiento tiene una importancia decisiva en la historia.", org: "Casa Atreides", planet: "Arrakis", first: "El Mesías de Dune", gender: "Hombre", height: 50, hairColor: "Cobrizo", movie: "No aparece en las películas" },
+            { name: "Ghanima Atreides", emojis: ["👶", "👑", "🧬", "🌙"], desc: "Hija de Paul y Chani, hermana gemela de Leto II.", org: "Casa Atreides", planet: "Arrakis", first: "El Mesías de Dune", gender: "Mujer", height: 50, hairColor: "Cobrizo", movie: "No aparece en las películas" },
+            { name: "Hayt", emojis: ["🧬", "⚔️", "👁️", "🔁"], desc: "Ghola de Duncan Idaho entregado a Paul por los tleilaxu.", org: "Casa Atreides", planet: "Arrakis", first: "El Mesías de Dune", gender: "Hombre", height: 185, hairColor: "Negro rizado", movie: "No aparece en las películas" },
+            { name: "Scytale", emojis: ["🎭", "🧬", "🕵️", "🧪"], desc: "Danzarín Rostro tleilaxu que participa en una conspiración contra Paul Atreides.", org: "Bene Tleilax", planet: "Tleilax", first: "El Mesías de Dune", gender: "Hombre", height: 170, hairColor: "Variable", movie: "No aparece en las películas" },
+            { name: "Edric", emojis: ["🌌", "🌀", "👁️", "🐟"], desc: "Navegante de la Cofradía Espacial que ayuda a ocultar la conspiración contra Paul.", org: "Cofradía Espacial", planet: "Desconocido", first: "El Mesías de Dune", gender: "Hombre", height: 200, hairColor: "Ninguno", movie: "No aparece en las películas" },
+            { name: "Bijaz", emojis: ["🧩", "🧠", "🎵", "🧪"], desc: "Enigmático tleilaxu de baja estatura que desempeña un papel clave en el plan contra Paul.", org: "Bene Tleilax", planet: "Tleilax", first: "El Mesías de Dune", gender: "Hombre", height: 120, hairColor: "Negro", movie: "No aparece en las películas" },
+            { name: "Otheym", emojis: ["⚔️", "🏜️", "💧", "🤝"], desc: "Antiguo fedaykin que advierte a Paul de la conspiración.", org: "Fremen", planet: "Arrakis", first: "El Mesías de Dune", gender: "Hombre", height: 175, hairColor: "Canoso", movie: "No aparece en las películas" },
+            { name: "Lichna", emojis: ["🏜️", "👩", "🗡️", "🎭"], desc: "Hija de Otheym cuya identidad se utiliza para engañar a Paul.", org: "Fremen", planet: "Arrakis", first: "El Mesías de Dune", gender: "Mujer", height: 160, hairColor: "Negro azulado", movie: "No aparece en las películas" },
+            { name: "Farok", emojis: ["⚔️", "🏜️", "🩸", "🤫"], desc: "Veterano de la yihad que acaba participando en la conspiración contra Paul.", org: "Fremen", planet: "Arrakis", first: "El Mesías de Dune", gender: "Hombre", height: 178, hairColor: "Canoso", movie: "No aparece en las películas" },
+            { name: "Esmar Tuek", emojis: ["🚀","🤝","🏜️","💰"], desc: "El líder contrabandista que da refugio a los supervivientes Atreides.", org: "Contrabandistas", planet: "Arrakis", first: "Dune", gender: "Hombre", height: 176, hairColor: "Gris", movie: "No aparece en las películas" },
+            { name: "Iakin Nefud", emojis: ["🛡️","⚔️","🖤","🏰"], desc: "El capitán de la guardia harkonnen en Arrakeen.", org: "Casa Harkonnen", planet: "Giedi Prime", first: "Dune", gender: "Hombre", height: 172, hairColor: "Castaño", movie: "No aparece en las películas" }
         ];
 
         const DUNEDATA_QUOTES = [
@@ -809,6 +858,7 @@
                 else if(view === 'stats') StatsView.render(port);
                 else if(view === 'achievements') AchievementsView.render(port);
                 else if(view === 'factionwar') FactionWarView.render(port);
+                else if(view === 'kanly') KanlyView.render(port);
             },
             renderHome(container) {
                 const sW = Daily.getState('wordle');
@@ -826,13 +876,14 @@
                         <div class="card" onclick="Router.go('stats')"><h2>📊 Estadísticas</h2><p>Tu progreso en Dunedle.</p></div>
                         <div class="card" onclick="Router.go('achievements')"><h2>🏆 Logros</h2><p>Desbloquea insignias jugando.</p></div>
                         <div class="card" onclick="Router.go('factionwar')"><h2>⚔️ Guerra de facciones</h2><p>Ranking global entre Atreides y Harkonnen.</p></div>
+                        <div class="card" onclick="Router.go('kanly')"><h2>🗡️ Modo Kanly</h2><p>Duelo 1 contra 1 a contrarreloj.</p></div>
                     </div>
                     <div class="feedback-box">
                         <p>¿Encontraste un fallo o tienes una idea para el juego?</p>
                         <a href="mailto:dunedle.es@gmail.com?subject=Feedback%20Dunedle" class="feedback-link">✉️ dunedle.es@gmail.com</a>
                     </div>
                     <p class="disclaimer">
-                        Dunedle es un proyecto de fan hecho sin ánimo de lucro, sin afiliación con Frank Herbert, Legendary Pictures ni Warner Bros. Dune® es una marca registrada de sus respectivos propietarios. Versión beta v0.6 — puede contener errores.
+                        Dunedle es un proyecto de fan hecho sin ánimo de lucro, sin afiliación con Frank Herbert, Legendary Pictures ni Warner Bros. Dune® es una marca registrada de sus respectivos propietarios. Versión beta v0.7 — puede contener errores.
                     </p>
                 `;
             }
@@ -1180,26 +1231,26 @@
         // final, así que no aparece. No toca ni sustituye la base de datos del libro
         // que usan Personaje del día ni Frase del día.
         const DUNEDATA_MOVIE_CHARACTERS = [
-            { name: "Paul Atreides", emojis: ["👑", "🏜️", "👁️", "🐭"], desc: "Interpretado por Timothée Chalamet.", org: "Casa Atreides", planet: "Arrakis", gender: "Hombre", height: 178, hairColor: "Castaño", movie: "Ambas películas" },
-            { name: "Leto Atreides", emojis: ["🐂", "💍", "🗡️", "🏛️"], desc: "Interpretado por Oscar Isaac.", org: "Casa Atreides", planet: "Caladan", gender: "Hombre", height: 174, hairColor: "Negro", movie: "Solo Dune (2021)" },
-            { name: "Lady Jessica", emojis: ["👩‍🏫", "🧘", "🤰", "💧"], desc: "Interpretada por Rebecca Ferguson.", org: "Bene Gesserit", planet: "Caladan", gender: "Mujer", height: 168, hairColor: "Castaño", movie: "Ambas películas" },
-            { name: "Stilgar", emojis: ["🧔", "💧", "🏜️", "🛡️"], desc: "Interpretado por Javier Bardem.", org: "Fremen", planet: "Arrakis", gender: "Hombre", height: 182, hairColor: "Negro", movie: "Ambas películas" },
-            { name: "Duncan Idaho", emojis: ["⚔️", "🔁", "💀", "🛡️"], desc: "Interpretado por Jason Momoa.", org: "Casa Atreides", planet: "Caladan", gender: "Hombre", height: 193, hairColor: "Negro", movie: "Solo Dune (2021)" },
-            { name: "Gurney Halleck", emojis: ["🎸", "🗡️", "😠", "🤎"], desc: "Interpretado por Josh Brolin.", org: "Casa Atreides", planet: "Caladan", gender: "Hombre", height: 177, hairColor: "Rubio", movie: "Ambas películas" },
-            { name: "Barón Vladimir Harkonnen", emojis: ["🦈", "🛢️", "🖤", "👑"], desc: "Interpretado por Stellan Skarsgård.", org: "Casa Harkonnen", planet: "Giedi Prime", gender: "Hombre", height: 191, hairColor: "Calvo", movie: "Ambas películas" },
-            { name: "Feyd-Rautha", emojis: ["🗡️", "😈", "👑", "🩸"], desc: "Interpretado por Austin Butler.", org: "Casa Harkonnen", planet: "Giedi Prime", gender: "Hombre", height: 183, hairColor: "Calvo", movie: "Solo Parte Dos (2024)" },
-            { name: "Chani", emojis: ["💧", "🏜️", "❤️", "🗡️"], desc: "Interpretada por Zendaya.", org: "Fremen", planet: "Arrakis", gender: "Mujer", height: 178, hairColor: "Negro", movie: "Ambas películas" },
-            { name: "Liet-Kynes", emojis: ["🌱", "🏜️", "🔬", "🕊️"], desc: "Interpretada por Sharon Duncan-Brewster. En la película, a diferencia del libro, Liet-Kynes es mujer.", org: "Fremen / Imperio", planet: "Arrakis", gender: "Mujer", height: 168, hairColor: "Negro", movie: "Solo Dune (2021)" },
-            { name: "Princesa Irulan", emojis: ["📜", "👑", "✍️", "💍"], desc: "Interpretada por Florence Pugh.", org: "Casa Corrino", planet: "Kaitain", gender: "Mujer", height: 159, hairColor: "Rubio", movie: "Solo Parte Dos (2024)" },
-            { name: "Thufir Hawat", emojis: ["🗡️", "🧠", "👴", "🛡️"], desc: "Interpretado por Stephen McKinley Henderson.", org: "Casa Atreides", planet: "Caladan", gender: "Hombre", height: 173, hairColor: "Canoso", movie: "Ambas películas" },
-            { name: "Piter De Vries", emojis: ["🧠", "😏", "💉", "🖤"], desc: "Interpretado por David Dastmalchian.", org: "Casa Harkonnen", planet: "Giedi Prime", gender: "Hombre", height: 173, hairColor: "Negro", movie: "Solo Dune (2021)" },
-            { name: "Wellington Yueh", emojis: ["💊", "😢", "🩺", "💔"], desc: "Interpretado por Chang Chen.", org: "Casa Atreides", planet: "Caladan", gender: "Hombre", height: 173, hairColor: "Negro", movie: "Solo Dune (2021)" },
-            { name: "Glossu Rabban", emojis: ["🐗", "⚔️", "😡", "🛢️"], desc: "Interpretado por Dave Bautista.", org: "Casa Harkonnen", planet: "Giedi Prime", gender: "Hombre", height: 190, hairColor: "Calvo", movie: "Ambas películas" },
-            { name: "Jamis", emojis: ["🗡️", "🏜️", "⚱️", "🌙"], desc: "Interpretado por Babs Olusanmokun.", org: "Fremen", planet: "Arrakis", gender: "Hombre", height: 180, hairColor: "Negro", movie: "Solo Dune (2021)" },
-            { name: "Lady Margot Fenring", emojis: ["🧘", "👗", "🔮", "👑"], desc: "Interpretada por Léa Seydoux.", org: "Bene Gesserit", planet: "Kaitain", gender: "Mujer", height: 168, hairColor: "Rubio", movie: "Solo Parte Dos (2024)" },
-            { name: "Shaddam IV", emojis: ["👑", "⚔️", "🏛️", "😨"], desc: "Interpretado por Christopher Walken.", org: "Casa Corrino", planet: "Kaitain", gender: "Hombre", height: 179, hairColor: "Canoso", movie: "Solo Parte Dos (2024)" },
-            { name: "Gaius Helen Mohiam", emojis: ["🧘", "💉", "👵", "🖤"], desc: "Interpretada por Charlotte Rampling.", org: "Bene Gesserit", planet: "Wallach IX", gender: "Mujer", height: 170, hairColor: "Canoso", movie: "Ambas películas" },
-            { name: "Shadout Mapes", emojis: ["🏠", "🗡️", "🧕", "🔑"], desc: "Interpretada por Golda Rosheuvel.", org: "Fremen", planet: "Arrakis", gender: "Mujer", height: 168, hairColor: "Negro", movie: "Solo Dune (2021)" }
+            { name: "Paul Atreides", emojis: ["🏜️","👁️","🐭","⚔️"], desc: "Interpretado por Timothée Chalamet.", org: "Casa Atreides", planet: "Arrakis", gender: "Hombre", height: 178, hairColor: "Castaño", movie: "Ambas películas" },
+            { name: "Leto Atreides", emojis: ["🐂","🏛️","🛡️","👑"], desc: "Interpretado por Oscar Isaac.", org: "Casa Atreides", planet: "Caladan", gender: "Hombre", height: 174, hairColor: "Negro", movie: "Solo Dune (2021)" },
+            { name: "Lady Jessica", emojis: ["🧘","🧬","💧","👁️"], desc: "Interpretada por Rebecca Ferguson.", org: "Bene Gesserit", planet: "Caladan", gender: "Mujer", height: 168, hairColor: "Castaño", movie: "Ambas películas" },
+            { name: "Stilgar", emojis: ["🏜️","💧","🛡️","🪱"], desc: "Interpretado por Javier Bardem.", org: "Fremen", planet: "Arrakis", gender: "Hombre", height: 182, hairColor: "Negro", movie: "Ambas películas" },
+            { name: "Duncan Idaho", emojis: ["⚔️","🛡️","🦅","🔁"], desc: "Interpretado por Jason Momoa.", org: "Casa Atreides", planet: "Caladan", gender: "Hombre", height: 193, hairColor: "Negro", movie: "Solo Dune (2021)" },
+            { name: "Gurney Halleck", emojis: ["🎸","⚔️","🩹","🛡️"], desc: "Interpretado por Josh Brolin.", org: "Casa Atreides", planet: "Caladan", gender: "Hombre", height: 177, hairColor: "Rubio", movie: "Ambas películas" },
+            { name: "Barón Vladimir Harkonnen", emojis: ["🖤","🏛️","👑","🛢️"], desc: "Interpretado por Stellan Skarsgård.", org: "Casa Harkonnen", planet: "Giedi Prime", gender: "Hombre", height: 191, hairColor: "Calvo", movie: "Ambas películas" },
+            { name: "Feyd-Rautha", emojis: ["⚔️","🩸","🪒","🖤"], desc: "Interpretado por Austin Butler.", org: "Casa Harkonnen", planet: "Giedi Prime", gender: "Hombre", height: 183, hairColor: "Calvo", movie: "Solo Parte Dos (2024)" },
+            { name: "Chani", emojis: ["🏜️","💧","⚔️","🐭"], desc: "Interpretada por Zendaya.", org: "Fremen", planet: "Arrakis", gender: "Mujer", height: 178, hairColor: "Negro", movie: "Ambas películas" },
+            { name: "Liet-Kynes", emojis: ["🌱","🏜️","🔬","🪱"], desc: "Interpretada por Sharon Duncan-Brewster. En la película, a diferencia del libro, Liet-Kynes es mujer.", org: "Fremen / Imperio", planet: "Arrakis", gender: "Mujer", height: 168, hairColor: "Negro", movie: "Solo Dune (2021)" },
+            { name: "Princesa Irulan", emojis: ["👑","📜","✍️","🏛️"], desc: "Interpretada por Florence Pugh.", org: "Casa Corrino", planet: "Kaitain", gender: "Mujer", height: 159, hairColor: "Rubio", movie: "Solo Parte Dos (2024)" },
+            { name: "Thufir Hawat", emojis: ["🧠","🧮","⚔️","🛡️"], desc: "Interpretado por Stephen McKinley Henderson.", org: "Casa Atreides", planet: "Caladan", gender: "Hombre", height: 173, hairColor: "Canoso", movie: "Ambas películas" },
+            { name: "Piter De Vries", emojis: ["🧠","🧪","💉","🖤"], desc: "Interpretado por David Dastmalchian.", org: "Casa Harkonnen", planet: "Giedi Prime", gender: "Hombre", height: 173, hairColor: "Negro", movie: "Solo Dune (2021)" },
+            { name: "Wellington Yueh", emojis: ["🩺","💊","🩸","💔"], desc: "Interpretado por Chang Chen.", org: "Casa Atreides", planet: "Caladan", gender: "Hombre", height: 173, hairColor: "Negro", movie: "Solo Dune (2021)" },
+            { name: "Glossu Rabban", emojis: ["🐗","⚔️","🖤","🏜️"], desc: "Interpretado por Dave Bautista.", org: "Casa Harkonnen", planet: "Giedi Prime", gender: "Hombre", height: 190, hairColor: "Calvo", movie: "Ambas películas" },
+            { name: "Jamis", emojis: ["⚔️","🏜️","💧","⚱️"], desc: "Interpretado por Babs Olusanmokun.", org: "Fremen", planet: "Arrakis", gender: "Hombre", height: 180, hairColor: "Negro", movie: "Solo Dune (2021)" },
+            { name: "Lady Margot Fenring", emojis: ["🧘","🧬","🎭","👑"], desc: "Interpretada por Léa Seydoux.", org: "Bene Gesserit", planet: "Kaitain", gender: "Mujer", height: 168, hairColor: "Rubio", movie: "Solo Parte Dos (2024)" },
+            { name: "Shaddam IV", emojis: ["👑","🏛️","🦁","⚔️"], desc: "Interpretado por Christopher Walken.", org: "Casa Corrino", planet: "Kaitain", gender: "Hombre", height: 179, hairColor: "Canoso", movie: "Solo Parte Dos (2024)" },
+            { name: "Gaius Helen Mohiam", emojis: ["🧘","📦","🪡","🖤"], desc: "Interpretada por Charlotte Rampling.", org: "Bene Gesserit", planet: "Wallach IX", gender: "Mujer", height: 170, hairColor: "Canoso", movie: "Ambas películas" },
+            { name: "Shadout Mapes", emojis: ["🏠","🗝️","🏜️","💧"], desc: "Interpretada por Golda Rosheuvel.", org: "Fremen", planet: "Arrakis", gender: "Mujer", height: 168, hairColor: "Negro", movie: "Solo Dune (2021)" }
         ];
 
         const CharacterGuessGame = {
@@ -1208,6 +1259,7 @@
                 { key: 'gender', label: 'Género' },
                 { key: 'height', label: 'Altura', numeric: true },
                 { key: 'org', label: 'Facción' },
+                { key: 'planet', label: 'Planeta' },
                 { key: 'hairColor', label: 'Pelo' },
                 { key: 'movie', label: 'Película' }
             ],
@@ -1384,12 +1436,28 @@
         // por ejemplo "vladimir" o "v" encuentran "Barón Vladimir Harkonnen". Ignora tildes.
         // Solo sugiere nombres que EMPIEZAN por lo escrito (no por una palabra suelta
         // dentro del nombre, como el apellido). Sí ignora tildes.
+        // Títulos/tratamientos que pueden ir delante del nombre real de un personaje.
+        // No activa la búsqueda por CUALQUIER palabra (eso traería de vuelta el problema
+        // de "a" encontrando a todos los Atreides por el apellido) — solo permite que,
+        // si el nombre completo empieza por uno de estos títulos, también valga buscar
+        // por lo que viene justo después del título.
+        const NAME_TITLES = ['baron', 'princesa', 'lady', 'conde', 'shadout'];
+
         function smartNameSearch(names, query, limit) {
             const val = foldAccents(query.trim());
             if(!val) return [];
-            return names
-                .filter(n => foldAccents(n).startsWith(val))
-                .slice(0, limit || 5);
+            const fullMatches = [];
+            const titleMatches = [];
+            names.forEach(n => {
+                const folded = foldAccents(n);
+                if(folded.startsWith(val)){ fullMatches.push(n); return; }
+                const words = folded.split(/\s+/);
+                if(words.length > 1 && NAME_TITLES.includes(words[0])){
+                    const rest = words.slice(1).join(' ');
+                    if(rest.startsWith(val)) titleMatches.push(n);
+                }
+            });
+            return [...fullMatches, ...titleMatches].slice(0, limit || 5);
         }
 
         function setupNameSearch(inputId, suggId, source, onCheck) {
@@ -1711,6 +1779,311 @@
             }
         };
 
+        /* --- MODO KANLY: duelo 1 contra 1 a contrarreloj, con matchmaking vía Firebase --- */
+        const KanlyGame = {
+            db: null, deviceId: null, available: false,
+            matchId: null, matchRef: null, queueRef: null,
+            myScore: 0, myAnswered: 0, opponentId: null,
+            questions: [], qIndex: 0, timerEnd: 0, timerInterval: null, searchTimeout: null,
+            onStateChange: null, // callback que usa KanlyView para re-renderizar
+
+            init() {
+                // Reutiliza la misma conexión y el mismo ID de dispositivo que la Guerra de Facciones.
+                this.available = FactionWar.available;
+                if(this.available){ this.db = FactionWar.db; this.deviceId = FactionWar.deviceId; }
+            },
+
+            // --- Generación de preguntas (misma semilla para los dos jugadores) ---
+            seededRandom(seed) {
+                let s = seed % 2147483647; if(s <= 0) s += 2147483646;
+                return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+            },
+            hashString(str) {
+                let h = 0;
+                for(let i = 0; i < str.length; i++){ h = (Math.imul(31, h) + str.charCodeAt(i)) | 0; }
+                return Math.abs(h) || 1;
+            },
+            buildQuestions(seed, count) {
+                const rand = this.seededRandom(this.hashString(seed));
+                const pool = DUNEDATA_CHARACTERS;
+                const quotePool = DUNEDATA_QUOTES.filter(q => pool.some(c => c.name === q.char));
+                const qs = [];
+                for(let i = 0; i < count; i++){
+                    const useQuote = quotePool.length > 0 && rand() < 0.4;
+                    if(useQuote){
+                        const q = quotePool[Math.floor(rand() * quotePool.length)];
+                        const distractors = this.pickDistractors(pool.map(c => c.name), q.char, rand, 3);
+                        const options = this.shuffle([q.char, ...distractors], rand);
+                        qs.push({ type: 'quote', prompt: q.text, options, answer: q.char });
+                    } else {
+                        const c = pool[Math.floor(rand() * pool.length)];
+                        const distractors = this.pickDistractors(pool.map(x => x.name), c.name, rand, 3);
+                        const options = this.shuffle([c.name, ...distractors], rand);
+                        qs.push({ type: 'emoji', prompt: c.emojis.join(' '), options, answer: c.name });
+                    }
+                }
+                return qs;
+            },
+            pickDistractors(allNames, correct, rand, n) {
+                const others = allNames.filter(x => x !== correct);
+                const picked = [];
+                while(picked.length < n && others.length > 0){
+                    const idx = Math.floor(rand() * others.length);
+                    picked.push(others.splice(idx, 1)[0]);
+                }
+                return picked;
+            },
+            shuffle(arr, rand) {
+                const a = arr.slice();
+                for(let i = a.length - 1; i > 0; i--){
+                    const j = Math.floor(rand() * (i + 1));
+                    [a[i], a[j]] = [a[j], a[i]];
+                }
+                return a;
+            },
+
+            // --- Matchmaking ---
+            async findMatch(onFound, onSearching) {
+                if(!this.available) return;
+                const myId = this.deviceId;
+                this.queueRef = this.db.ref('kanly/queue/' + myId);
+                await this.queueRef.set({ joinedAt: firebase.database.ServerValue.TIMESTAMP });
+                this.queueRef.onDisconnect().remove();
+
+                this.db.ref('kanly/playerMatch/' + myId).on('value', async (snap) => {
+                    const matchId = snap.val();
+                    if(matchId && !this.matchId){
+                        this.matchId = matchId;
+                        this.db.ref('kanly/playerMatch/' + myId).off();
+                        await this.queueRef.remove();
+                        this.joinMatch(matchId, onFound);
+                    }
+                });
+
+                const queueListener = this.db.ref('kanly/queue').on('value', (snap) => {
+                    if(this.matchId) return;
+                    const all = snap.val() || {};
+                    const entries = Object.entries(all).sort((a, b) => (a[1].joinedAt || 0) - (b[1].joinedAt || 0));
+                    if(entries.length < 2) return;
+                    const pair = [entries[0][0], entries[1][0]].sort();
+                    if(pair[0] !== myId) return; // solo el primero del par crea la partida, evita duplicados
+                    const [idA, idB] = pair;
+                    const newMatchId = idA + '_' + idB + '_' + Date.now();
+                    this.db.ref('kanly/matches/' + newMatchId).set({
+                        players: [idA, idB],
+                        scores: { [idA]: 0, [idB]: 0 },
+                        answered: { [idA]: 0, [idB]: 0 },
+                        finished: { [idA]: false, [idB]: false },
+                        seed: newMatchId,
+                        startAt: firebase.database.ServerValue.TIMESTAMP
+                    }).then(() => {
+                        this.db.ref('kanly/playerMatch/' + idA).set(newMatchId);
+                        this.db.ref('kanly/playerMatch/' + idB).set(newMatchId);
+                        this.db.ref('kanly/queue/' + idA).remove();
+                        this.db.ref('kanly/queue/' + idB).remove();
+                    }).catch(() => {});
+                });
+
+                this.searchTimeout = setTimeout(() => { if(onSearching) onSearching(); }, 30000);
+            },
+            cancelSearch() {
+                clearTimeout(this.searchTimeout);
+                if(this.queueRef){ this.queueRef.remove(); this.queueRef.off(); }
+                this.db.ref('kanly/playerMatch/' + this.deviceId).off();
+                this.db.ref('kanly/queue').off();
+            },
+            async joinMatch(matchId, onFound) {
+                clearTimeout(this.searchTimeout);
+                this.db.ref('kanly/queue').off();
+                const snap = await this.db.ref('kanly/matches/' + matchId).once('value');
+                const data = snap.val();
+                this.opponentId = data.players.find(p => p !== this.deviceId);
+                this.questions = this.buildQuestions(data.seed, 200);
+                this.qIndex = 0; this.myScore = 0; this.myAnswered = 0;
+                this.timerEnd = data.startAt + 60000;
+                this.matchRef = this.db.ref('kanly/matches/' + matchId);
+                this.matchRef.on('value', (s) => { if(this.onStateChange) this.onStateChange(s.val()); });
+                if(onFound) onFound();
+            },
+            currentQuestion() { return this.questions[this.qIndex]; },
+            async answer(choice) {
+                const q = this.currentQuestion();
+                if(!q) return;
+                const correct = choice === q.answer;
+                this.myAnswered++;
+                if(correct) this.myScore++;
+                this.qIndex++;
+                if(this.matchRef){
+                    this.matchRef.child('scores/' + this.deviceId).set(this.myScore);
+                    this.matchRef.child('answered/' + this.deviceId).set(this.myAnswered);
+                }
+                return correct;
+            },
+            async finishMyself() {
+                if(this.matchRef) await this.matchRef.child('finished/' + this.deviceId).set(true);
+            },
+            leaveMatch() {
+                if(this.matchRef){ this.matchRef.off(); this.matchRef = null; }
+                this.matchId = null; this.opponentId = null;
+            }
+        };
+
+        const KanlyView = {
+            phase: 'idle', container: null, opponentData: null, timerInterval: null,
+
+            render(container) {
+                this.container = container;
+                if(!KanlyGame.available){
+                    container.innerHTML = `
+                        <div class="victory-panel">
+                            <h2>🗡️ Modo Kanly</h2>
+                            <p style="color:#999; margin:12px 0;">Esta función todavía no está disponible — hace falta la misma conexión que usa la Guerra de Facciones.</p>
+                            <button class="btn-action" onclick="Router.go('home')">INICIO</button>
+                        </div>
+                    `;
+                    return;
+                }
+                this.phase = 'idle';
+                this.renderIdle();
+            },
+
+            renderIdle() {
+                this.container.innerHTML = `
+                    <div class="victory-panel">
+                        <h2>🗡️ Modo Kanly</h2>
+                        <p style="color:#999; font-size:0.9rem; margin:10px 0 20px;">
+                            Duelo 1 contra 1. 60 segundos, el máximo de preguntas que puedas, gana quien más acierte.
+                        </p>
+                        <button class="btn-action" onclick="KanlyView.startSearch()">BUSCAR DUELO</button>
+                        <button class="btn-action" style="background:transparent; border:1px solid var(--border-metal); color:#999;" onclick="Router.go('home')">VOLVER</button>
+                    </div>
+                `;
+            },
+
+            startSearch() {
+                this.phase = 'searching';
+                this.renderSearching(false);
+                KanlyGame.findMatch(
+                    () => { this.phase = 'duel'; this.startDuel(); },
+                    () => { this.renderSearching(true); }
+                );
+            },
+
+            renderSearching(timedOut) {
+                this.container.innerHTML = `
+                    <div class="victory-panel">
+                        <h2>🗡️ Buscando rival...</h2>
+                        <div class="kanly-spinner"></div>
+                        ${timedOut
+                            ? `<p style="color:var(--sand); margin:10px 0;">Nadie más está buscando duelo ahora mismo.</p>`
+                            : `<p style="color:#999; margin:10px 0;">Esto puede tardar un poco.</p>`}
+                        <button class="btn-action" style="background:transparent; border:1px solid var(--border-metal); color:#999;" onclick="KanlyView.cancelSearch()">CANCELAR</button>
+                    </div>
+                `;
+            },
+
+            cancelSearch() {
+                KanlyGame.cancelSearch();
+                this.phase = 'idle';
+                this.renderIdle();
+            },
+
+            startDuel() {
+                KanlyGame.onStateChange = (data) => { this.opponentData = data; this.updateScoreboard(); };
+                this.renderDuel();
+                this.tick();
+                this.timerInterval = setInterval(() => this.tick(), 250);
+            },
+
+            tick() {
+                const remaining = Math.max(0, KanlyGame.timerEnd - Date.now());
+                const secs = Math.ceil(remaining / 1000);
+                const timerEl = document.getElementById('kanly-timer');
+                if(timerEl){
+                    timerEl.textContent = secs + 's';
+                    timerEl.classList.toggle('low', secs <= 10);
+                }
+                if(remaining <= 0){
+                    clearInterval(this.timerInterval);
+                    this.endDuel();
+                }
+            },
+
+            renderDuel() {
+                const q = KanlyGame.currentQuestion();
+                if(!q){ this.endDuel(); return; }
+                const promptHTML = q.type === 'emoji'
+                    ? `<div class="kanly-question-emojis">${q.prompt}</div><p style="color:#999;">¿Quién es?</p>`
+                    : `<p class="kanly-question-quote">"${q.prompt}"</p><p style="color:#999; margin-top:6px;">¿Quién lo dijo?</p>`;
+                this.container.innerHTML = `
+                    <div class="victory-panel">
+                        <div class="kanly-timer" id="kanly-timer">60s</div>
+                        <div class="kanly-vs">
+                            <div class="kanly-player me"><div class="kanly-score" id="kanly-my-score">${KanlyGame.myScore}</div><div class="kanly-label">Tú</div></div>
+                            <div class="kanly-vs-divider">VS</div>
+                            <div class="kanly-player"><div class="kanly-score" id="kanly-opp-score">0</div><div class="kanly-label">Rival</div></div>
+                        </div>
+                        <div class="kanly-question-box">${promptHTML}</div>
+                        <div class="kanly-options" id="kanly-options">
+                            ${q.options.map(opt => `<button class="kanly-option" onclick="KanlyView.pick(this, '${opt.replace(/'/g, "\\'")}')">${opt}</button>`).join('')}
+                        </div>
+                    </div>
+                `;
+            },
+
+            async pick(btn, choice) {
+                document.querySelectorAll('.kanly-option').forEach(b => { b.onclick = null; });
+                const q = KanlyGame.currentQuestion();
+                const correct = await KanlyGame.answer(choice);
+                btn.classList.add(correct ? 'correct' : 'wrong');
+                if(!correct){
+                    document.querySelectorAll('.kanly-option').forEach(b => { if(b.textContent === q.answer) b.classList.add('correct'); });
+                }
+                if(correct){ SoundManager.correct(); Haptics.correct(); }
+                else { SoundManager.absent(); Haptics.absent(); }
+                setTimeout(() => {
+                    if(KanlyGame.timerEnd - Date.now() <= 0){ this.endDuel(); return; }
+                    this.renderDuel();
+                }, 450);
+            },
+
+            updateScoreboard() {
+                if(!this.opponentData || !this.opponentData.scores) return;
+                const oppScore = this.opponentData.scores[KanlyGame.opponentId] || 0;
+                const el = document.getElementById('kanly-opp-score');
+                if(el) el.textContent = oppScore;
+            },
+
+            endDuel() {
+                clearInterval(this.timerInterval);
+                KanlyGame.finishMyself();
+                const myScore = KanlyGame.myScore;
+                const oppScore = (this.opponentData && this.opponentData.scores) ? (this.opponentData.scores[KanlyGame.opponentId] || 0) : 0;
+                let resultClass = 'tie', resultText = '¡Empate!';
+                if(myScore > oppScore){ resultClass = 'win'; resultText = '¡Has ganado el duelo!'; SoundManager.win(); Haptics.win(); Confetti.burst(); }
+                else if(myScore < oppScore){ resultClass = 'lose'; resultText = 'Has perdido el duelo'; SoundManager.wrong(); Haptics.wrong(); }
+                else { SoundManager.win(); }
+                this.container.innerHTML = `
+                    <div class="victory-panel">
+                        <h2 class="kanly-result-title ${resultClass}">${resultText}</h2>
+                        <div class="kanly-vs" style="margin-top:20px;">
+                            <div class="kanly-player me"><div class="kanly-score">${myScore}</div><div class="kanly-label">Tú</div></div>
+                            <div class="kanly-vs-divider">VS</div>
+                            <div class="kanly-player"><div class="kanly-score">${oppScore}</div><div class="kanly-label">Rival</div></div>
+                        </div>
+                        <button class="btn-action" onclick="KanlyView.playAgain()">BUSCAR OTRO DUELO</button>
+                        <button class="btn-action" style="background:transparent; border:1px solid var(--border-metal); color:#999;" onclick="Router.go('home')">INICIO</button>
+                    </div>
+                `;
+                KanlyGame.leaveMatch();
+            },
+
+            playAgain() {
+                this.render(this.container);
+                this.startSearch();
+            }
+        };
+
         const FactionChoice = {
             factions: {
                 atreides: { emoji: '🦅', label: 'Atreides' },
@@ -1991,7 +2364,7 @@
 
         window.onload = () => {
             Spice.init(); Confetti.init(); ThemeManager.init(); SoundManager.init();
-            FactionChoice.init(); FactionWar.init(); GlobalStreak.init();
+            FactionChoice.init(); FactionWar.init(); GlobalStreak.init(); KanlyGame.init();
             Router.go('home'); HowTo.maybeShowFirstTime();
         };
     </script>
