@@ -875,8 +875,8 @@
                         <div class="card" onclick="Router.go('whois')"><h2>🕵️ ¿Quién es?</h2><p>Compara datos y adivina.</p><span class="status-badge">${getBadge(sC)}</span></div>
                         <div class="card" onclick="Router.go('stats')"><h2>📊 Estadísticas</h2><p>Tu progreso en Dunedle.</p></div>
                         <div class="card" onclick="Router.go('achievements')"><h2>🏆 Logros</h2><p>Desbloquea insignias jugando.</p></div>
+                        <div class="card" onclick="Router.go('kanly')"><h2>🗡️ Modo Kanly (TEST)</h2><p>Duelo 1 contra 1 a contrarreloj.</p></div>
                         <div class="card" onclick="Router.go('factionwar')"><h2>⚔️ Guerra de facciones</h2><p>Ranking global entre Atreides y Harkonnen.</p></div>
-                        <div class="card" onclick="Router.go('kanly')"><h2>🗡️ Modo Kanly</h2><p>Duelo 1 contra 1 a contrarreloj.</p></div>
                     </div>
                     <div class="feedback-box">
                         <p>¿Encontraste un fallo o tienes una idea para el juego?</p>
@@ -1846,6 +1846,11 @@
             async findMatch(onFound, onSearching) {
                 if(!this.available) return;
                 const myId = this.deviceId;
+                this.matchId = null;
+                // Limpia cualquier partida vieja que hubiera quedado colgada de una búsqueda
+                // anterior (si no, el listener de abajo la detectaría al instante como si
+                // fuera nueva, con el cronómetro ya agotado hace rato).
+                try { await this.db.ref('kanly/playerMatch/' + myId).remove(); } catch(e) {}
                 this.queueRef = this.db.ref('kanly/queue/' + myId);
                 await this.queueRef.set({ joinedAt: firebase.database.ServerValue.TIMESTAMP });
                 this.queueRef.onDisconnect().remove();
@@ -1936,7 +1941,7 @@
                 if(!KanlyGame.available){
                     container.innerHTML = `
                         <div class="victory-panel">
-                            <h2>🗡️ Modo Kanly</h2>
+                            <h2>🗡️ Modo Kanly (TEST)</h2>
                             <p style="color:#999; margin:12px 0;">Esta función todavía no está disponible — hace falta la misma conexión que usa la Guerra de Facciones.</p>
                             <button class="btn-action" onclick="Router.go('home')">INICIO</button>
                         </div>
@@ -1950,7 +1955,7 @@
             renderIdle() {
                 this.container.innerHTML = `
                     <div class="victory-panel">
-                        <h2>🗡️ Modo Kanly</h2>
+                        <h2>🗡️ Modo Kanly (TEST)</h2>
                         <p style="color:#999; font-size:0.9rem; margin:10px 0 20px;">
                             Duelo 1 contra 1. 60 segundos, el máximo de preguntas que puedas, gana quien más acierte.
                         </p>
