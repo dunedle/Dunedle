@@ -83,9 +83,15 @@
         .kanly-vs-divider { font-size: 1.1rem; color: var(--spice); font-weight: bold; }
         .kanly-timer { text-align: center; font-size: 2.2rem; font-weight: bold; color: var(--sand); margin-bottom: 14px; font-variant-numeric: tabular-nums; }
         .kanly-timer.low { color: #ef4444; animation: cellPop 0.5s infinite; }
-        .kanly-question-box { text-align: center; margin: 10px 0 20px; }
+        .kanly-question-box { text-align: center; margin: 10px 0 20px; animation: kanlyQuestionIn 0.3s ease-out; }
+        .kanly-options { animation: kanlyQuestionIn 0.3s ease-out 0.05s backwards; }
+        @keyframes kanlyQuestionIn {
+            from { opacity: 0; transform: translateY(12px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
         .kanly-question-emojis { font-size: 2.8rem; margin-bottom: 10px; }
         .kanly-question-quote { font-style: italic; font-size: 1.1rem; color: var(--sand); }
+        .kanly-question-trivia { font-size: 1.12rem; font-weight: 600; color: var(--text-white); line-height: 1.4; }
         .kanly-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .kanly-option {
             background: var(--panel-gray); border: 2px solid var(--border-metal); border-radius: 10px;
@@ -170,12 +176,24 @@
         .home-subtitle { text-align: center; color: var(--sand); font-size: 0.95rem; letter-spacing: 1px; margin: -0.5rem 0 0.2rem; opacity: 0.85; }
         .disclaimer { font-size: 0.7rem; line-height: 1.4; color: #666; text-align: center; margin-top: 20px; padding: 0 10px 20px; }
         .feedback-box {
-            margin-top: 24px; padding: 16px; text-align: center;
+            margin-top: 18px; padding: 10px; text-align: center;
             background: rgba(194,178,128,0.06); border: 1px solid var(--border-metal); border-radius: 10px;
         }
-        .feedback-box p { font-size: 0.82rem; color: #aaa; margin-bottom: 8px; }
-        .feedback-link { display: inline-block; color: var(--sand); font-weight: bold; font-size: 0.9rem; text-decoration: none; border-bottom: 1px solid var(--sand); padding-bottom: 2px; }
-        .feedback-link:hover { opacity: 0.8; }
+        .social-row { display: flex; justify-content: center; gap: 22px; }
+        .social-item { display: flex; flex-direction: column; align-items: center; }
+        .contact-circle {
+            width: 42px; height: 42px; border-radius: 50%;
+            background: rgba(194,178,128,0.1); border: 1.5px solid var(--sand); color: var(--sand);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; margin: 2px auto 4px; padding: 0; transition: background 0.2s;
+        }
+        .contact-circle:hover { background: rgba(194,178,128,0.22); }
+        .contact-circle:active { transform: scale(0.95); }
+        .contact-circle svg { width: 19px; height: 19px; }
+        .contact-label { font-size: 0.65rem; color: #999; letter-spacing: 1px; text-transform: uppercase; }
+        .contact-email { margin-top: 6px; font-size: 0.8rem; max-height: 0; overflow: hidden; transition: max-height 0.25s ease; }
+        .contact-email.show { max-height: 40px; }
+        .contact-email a { color: var(--sand); font-weight: bold; text-decoration: none; border-bottom: 1px solid var(--sand); padding-bottom: 1px; }
         .card {
             background: linear-gradient(145deg, var(--panel-gray), #111);
             border: 2px solid var(--border-metal);
@@ -188,6 +206,13 @@
         .card:hover { border-color: var(--sand); }
         .card h2 { color: var(--sand); margin-bottom: 0.3rem; font-size: 1.4rem; }
         .status-badge { position: absolute; top: 15px; right: 15px; font-size: 1.2rem; }
+        .kanly-daily-checks { position: absolute; top: 15px; right: 15px; display: flex; gap: 3px; }
+        .kanly-check {
+            width: 18px; height: 18px; border-radius: 50%; font-size: 0.65rem; font-weight: bold;
+            display: flex; align-items: center; justify-content: center; line-height: 1;
+            border: 1.5px solid var(--border-metal); color: transparent;
+        }
+        .kanly-check.filled { background: var(--correct); border-color: var(--correct); color: #06240f; }
 
         /* --- Wordle Board --- */
         .grid-container { width: 100%; display: flex; justify-content: center; padding: 10px 0; overflow-x: auto; }
@@ -364,7 +389,7 @@
             <button class="icon-btn" id="mute-btn" onclick="SoundManager.toggle()" title="Silenciar sonido" aria-label="Silenciar sonido">🔊</button>
             <span id="streak-badge" class="streak-badge" title="Tu racha de días jugando" onclick="GlobalStreak.showInfo()" style="cursor:pointer;">🔥0</span>
         </div>
-        <h1 class="logo" onclick="Router.go('home')">DUNEDLE <span class="beta-badge">BETA v0.7</span></h1>
+        <h1 class="logo" onclick="Router.go('home')">DUNEDLE <span class="beta-badge">BETA v0.9</span></h1>
         <div class="header-side right">
             <div id="theme-selector-slot">
                 <button class="icon-btn" onclick="FactionChoice.show(false)" title="Elegir facción" aria-label="Elegir facción">⚔️</button>
@@ -375,8 +400,127 @@
     <main id="view-port"></main>
 
     <script>
+        /* --- IDIOMA (español / inglés US) --- */
+        const Lang = {
+            current: 'es', chosen: false,
+            init() {
+                try {
+                    const saved = localStorage.getItem('dunedle_lang');
+                    this.chosen = (saved === 'es' || saved === 'en');
+                    this.current = (saved === 'en') ? 'en' : 'es';
+                } catch(e) {}
+            },
+            get suffix() { return this.current === 'en' ? '_en' : ''; },
+            set(code) { try { localStorage.setItem('dunedle_lang', code); } catch(e) {} location.reload(); }
+        };
+        Lang.init();
+
+        const I18N_UI_EN = {"Juegos diarios de Dune": "Daily Dune games", "🟨 Palabra del día": "🟨 Word of the Day", "El reto clásico.": "The classic challenge.", "😀 Personaje del día": "😀 Character of the Day", "Identifica símbolos.": "Decode the emojis.", "💬 Frase del día": "💬 Quote of the Day", "¿Quién lo dijo?": "Who said it?", "🕵️ ¿Quién es?": "🕵️ Who Is It?", "Compara datos y adivina.": "Compare clues and guess.", "🗡️ Modo Kanly": "🗡️ Kanly Mode", "Duelo 1 contra 1 a contrarreloj.": "1v1 duel against the clock.", "⚔️ Guerra de facciones": "⚔️ Faction War", "Ranking global entre Atreides y Harkonnen.": "Global ranking between Atreides and Harkonnen.", "📊 Estadísticas": "📊 Stats", "Tu progreso en Dunedle.": "Your progress in Dunedle.", "🏆 Logros": "🏆 Achievements", "Desbloquea insignias jugando.": "Unlock badges by playing.", "Contacto": "Contact", "Próximamente": "Coming soon", "Dunedle es un proyecto de fan hecho sin ánimo de lucro, sin afiliación con Frank Herbert, Legendary Pictures ni Warner Bros. Dune® es una marca registrada de sus respectivos propietarios. Versión beta v0.9 — puede contener errores.": "Dunedle is a non-profit fan project with no affiliation with Frank Herbert, Legendary Pictures, or Warner Bros. Dune® is a registered trademark of its respective owners. Beta version v0.9 — may contain bugs.", "Política de privacidad": "Privacy Policy", "Cómo jugar": "How to play", "Silenciar sonido": "Mute sound", "Tu racha de días jugando": "Your daily play streak", "Elegir facción": "Choose faction", "Cambiar facción": "Change faction", "Mostrar correo de contacto": "Show contact email", "Donar en Ko-fi": "Donate on Ko-fi", "Otro juego": "Another game", "Nombre...": "Name...", "🍪 Antes de empezar": "🍪 Before you start", "Dunedle guarda cosas en este dispositivo (localStorage) para recordar tu progreso, estadísticas, logros y preferencias.": "Dunedle stores data on this device (localStorage) to remember your progress, stats, achievements, and preferences.", "Si eliges una facción o buscas un duelo en el Modo Kanly, también se envía un identificador aleatorio (no personal) a una base de datos en la nube, solo para esas dos funciones.": "If you choose a faction or look for a duel in Kanly Mode, a random (non-personal) identifier is also sent to a cloud database, only for those two features.", "No usamos cookies de publicidad ni de rastreo.": "We don't use advertising or tracking cookies.", "Leer la política de privacidad completa": "Read the full privacy policy", "ENTENDIDO": "GOT IT", "🏜️ Cómo jugar DUNEDLE": "🏜️ How to play DUNEDLE", "Cada día hay tres retos nuevos basados en el universo de Dune.": "Every day there are new challenges based on the Dune universe.", "Adivina la palabra en 6 intentos. Después de cada intento, las casillas cambian de color:": "Guess the word in 6 tries. After each try, the tiles change color:", "letra correcta en su lugar": "correct letter in the right spot", "letra correcta, lugar equivocado": "correct letter, wrong spot", "letra no está en la palabra": "letter is not in the word", "Se revela un emoji nuevo con cada intento fallido. Adivina el personaje antes de quedarte sin pistas.": "A new emoji is revealed with each wrong guess. Guess the character before you run out of clues.", "Lee la cita y adivina quién la dijo, con ayuda del buscador de nombres.": "Read the quote and guess who said it, with help from the name search.", "Escribe un nombre y compara sus datos (género, altura, facción, pelo, película, libro) con el personaje del día. En verde lo que coincide, en rojo lo que no. La altura además te indica con una flecha si el personaje objetivo es más alto o más bajo.": "Type a name and compare its details (gender, height, faction, hair, film) with the character of the day. Green means a match, red means no match. Height also shows an arrow telling you whether the target character is taller or shorter.", "Escribe un nombre y compara sus datos (género, altura, facción, pelo, película) con el personaje del día. Solo salen personajes que aparecen de verdad en las películas de Dune. En verde lo que coincide, en rojo lo que no. La altura además te indica con una flecha si el personaje objetivo es más alto o más bajo.": "Type a name and compare its details (gender, height, faction, hair, film) with the character of the day. Only characters who actually appear in the Dune films are included. Green means a match, red means no match. Height also shows an arrow telling you whether the target character is taller or shorter.", "Todos los retos se reinician cada día a medianoche.": "All challenges reset every day at midnight.", "⚔️ Elige tu facción": "⚔️ Choose your faction", "La interfaz cambiará de color según tu elección. Podrás cambiarla luego pulsando tu emblema en la cabecera.": "The interface will change color based on your choice. You can change it later by tapping your emblem in the header.", "Ahora no": "Not now", "Quitar mi facción": "Remove my faction", "📊 Tus estadísticas": "📊 Your stats", "jugados": "played", "victorias": "wins", "racha actual": "current streak", "mejor racha": "best streak", "Distribución de intentos": "Guess distribution", "🏆 VER LOGROS": "🏆 VIEW ACHIEVEMENTS", "INICIO": "HOME", "📊 ESTADÍSTICAS": "📊 STATS", "Se van desbloqueando a medida que aciertas retos.": "They unlock as you win challenges.", "¡Logro desbloqueado!": "Achievement unlocked!", "🔥 Racha": "🔥 Streak", "Cuenta los días seguidos que ganas al menos un reto, en cualquiera de los 4 juegos (no hace falta ganarlos todos, con uno vale).": "Counts the consecutive days you win at least one challenge, in any of the games (you don't need to win them all — one is enough).", "Si un día no ganas ninguno, la racha vuelve a empezar desde 0 al día siguiente.": "If you don't win any on a given day, the streak starts over from 0 the next day.", "Cargando el marcador global...": "Loading the global scoreboard...", "Esta función todavía no está configurada. Hace falta conectar el juego a una base de datos gratuita (Firebase) para que el marcador sea real y compartido entre todos los jugadores.": "This feature isn't set up yet. The game needs to be connected to a free database (Firebase) so the scoreboard is real and shared between all players.", "No se pudo cargar el marcador ahora mismo. Comprueba tu conexión e inténtalo de nuevo.": "The scoreboard couldn't be loaded right now. Check your connection and try again.", "🤝 El mes pasado terminó en empate.": "🤝 Last month ended in a tie.", "ganó la guerra de facciones el mes pasado.": "won the faction war last month.", "Cada acierto de quien haya elegido facción suma un punto. Quedan": "Each win by a player who has chosen a faction adds one point. Days left in the month:", "días para que acabe el mes.": "", "día para que acabe el mes.": "", "Aún no has elegido facción — tus aciertos no suman al marcador hasta que elijas una.": "You haven't chosen a faction yet — your wins don't count toward the scoreboard until you choose one.", "PALABRA DEL DÍA": "WORD OF THE DAY", "PERSONAJE DEL DÍA": "CHARACTER OF THE DAY", "¿QUIÉN DIJO ESTO?": "WHO SAID THIS?", "¿QUIÉN ES?": "WHO IS IT?", "COMPROBAR": "CHECK", "¡Misión Cumplida!": "Mission Accomplished!", "El desierto vence": "The desert wins", "IDENTIFICADO": "IDENTIFIED", "SABIDURÍA RECONOCIDA": "WISDOM RECOGNIZED", "Próximo reto en:": "Next challenge in:", "Próximo en:": "Next in:", "📸 Compartir resultado": "📸 Share result", "Retos pendientes:": "Pending challenges:", "➡️ Palabra": "➡️ Word", "➡️ Personaje": "➡️ Character", "➡️ Frase": "➡️ Quote", "➡️ ¿Quién es?": "➡️ Who Is It?", "¡Has completado todo por hoy!": "You've completed everything for today!", "Escribe un nombre. Compararemos sus datos con el personaje del día.": "Type a name. We'll compare its details with the character of the day.", "Ese personaje no está en la base de datos.": "That character isn't in the database.", "Ya has probado con ese personaje.": "You've already tried that character.", "Personaje": "Character", "Género": "Gender", "Altura": "Height", "Facción": "Faction", "Planeta": "Planet", "Pelo": "Hair", "Película": "Film", "Libro": "Book", "📸 Tu resultado": "📸 Your result", "📤 Compartir / Descargar imagen": "📤 Share / Download image", "📋 Copiar como texto": "📋 Copy as text", "CERRAR": "CLOSE", "✅ ¡Copiado!": "✅ Copied!", "⚠️ No se pudo copiar": "⚠️ Couldn't copy", "✅ ¡Descargada!": "✅ Downloaded!", "Esta función todavía no está disponible — hace falta la misma conexión que usa la Guerra de Facciones.": "This feature isn't available yet — it needs the same connection used by Faction War.", "Duelo 1 contra 1. 60 segundos, el máximo de preguntas que puedas, gana quien más acierte.": "1v1 duel. 60 seconds, answer as many questions as you can — whoever gets the most right wins.", "BUSCAR DUELO": "FIND A DUEL", "VOLVER": "BACK", "🗡️ Buscando rival...": "🗡️ Looking for an opponent...", "Esto puede tardar un poco.": "This may take a moment.", "CANCELAR": "CANCEL", "Nadie más está buscando duelo ahora mismo.": "Nobody else is looking for a duel right now.", "Tú": "You", "Rival": "Opponent", "¿Quién es?": "Who is it?", "¡Has ganado el duelo!": "You won the duel!", "Has perdido el duelo": "You lost the duel", "¡Empate!": "It's a tie!", "BUSCAR OTRO DUELO": "FIND ANOTHER DUEL", "Aprendiz del Desierto": "Desert Apprentice", "Acierta 5 palabras del día.": "Win 5 Words of the Day.", "Guía Fremen": "Fremen Guide", "Acierta 15 palabras del día.": "Win 15 Words of the Day.", "Maestro de Arrakis": "Master of Arrakis", "Acierta 30 palabras del día.": "Win 30 Words of the Day.", "Emperador del Léxico": "Emperor of Words", "Acierta 50 palabras del día.": "Win 50 Words of the Day.", "Observador": "Observer", "Identifica 5 personajes por emojis.": "Identify 5 characters by emojis.", "Reconocedor": "Recognizer", "Identifica 15 personajes por emojis.": "Identify 15 characters by emojis.", "Sabio del Imperio": "Sage of the Empire", "Identifica 30 personajes por emojis.": "Identify 30 characters by emojis.", "Rostro Conocido": "Familiar Face", "Identifica 50 personajes por emojis.": "Identify 50 characters by emojis.", "Aprendiz de Irulan": "Irulan's Apprentice", "Acierta 5 frases del día.": "Win 5 Quotes of the Day.", "Cronista": "Chronicler", "Acierta 15 frases del día.": "Win 15 Quotes of the Day.", "Historiador Imperial": "Imperial Historian", "Acierta 30 frases del día.": "Win 30 Quotes of the Day.", "Voz de Muad'Dib": "Voice of Muad'Dib", "Acierta 50 frases del día.": "Win 50 Quotes of the Day.", "Investigador": "Investigator", "Acierta 5 veces en ¿Quién es?": "Win 5 times in Who Is It?", "Detective de Arrakis": "Arrakis Detective", "Acierta 15 veces en ¿Quién es?": "Win 15 times in Who Is It?", "Genetista Imperial": "Imperial Geneticist", "Acierta 30 veces en ¿Quién es?": "Win 30 times in Who Is It?", "Archivo Bene Gesserit": "Bene Gesserit Archive", "Acierta 50 veces en ¿Quién es?": "Win 50 times in Who Is It?", "Primera Sangre": "First Blood", "Gana 5 duelos en el Modo Kanly.": "Win 5 duels in Kanly Mode.", "Duelista": "Duelist", "Gana 15 duelos en el Modo Kanly.": "Win 15 duels in Kanly Mode.", "Maestro Espadachín": "Master Swordsman", "Gana 30 duelos en el Modo Kanly.": "Win 30 duels in Kanly Mode.", "Iniciado": "Initiate", "Acierta 10 retos en total, entre todos los juegos.": "Win 10 challenges in total, across all games.", "Adepto": "Adept", "Acierta 30 retos en total, entre todos los juegos.": "Win 30 challenges in total, across all games.", "Leyenda de Dunedle": "Dunedle Legend", "Acierta 60 retos en total, entre todos los juegos.": "Win 60 challenges in total, across all games.", "Acierta 100 retos en total, entre todos los juegos.": "Win 100 challenges in total, across all games.", "Palabra del día": "Word of the Day", "Personaje del día": "Character of the Day", "Frase del día": "Quote of the Day", "¡Palabra acertada!": "Word solved!", "El desierto venció": "The desert won", "{n}/6 intentos": "{n}/6 tries", "Identificado en {n} intento": "Identified in {n} try", "Identificado en {n} intentos": "Identified in {n} tries", "No identificado": "Not identified", "Adivinado en {n} intento": "Guessed in {n} try", "Adivinado en {n} intentos": "Guessed in {n} tries", "No adivinado": "Not guessed", "dunedle · reto diario del universo de Dune": "dunedle · daily game from the Dune universe", "DUNEDLE 🏜️ {game} — acertado en {n} intento ✅": "DUNEDLE 🏜️ {game} — solved in {n} try ✅", "DUNEDLE 🏜️ {game} — acertado en {n} intentos ✅": "DUNEDLE 🏜️ {game} — solved in {n} tries ✅", "DUNEDLE 🏜️ {game} — no lo logré hoy ❌": "DUNEDLE 🏜️ {game} — didn't get it today ❌", "DUNEDLE 🏜️ Palabra del día {r}": "DUNEDLE 🏜️ Word of the Day {r}", "Dunedle — Juegos diarios de Dune": "Dunedle — Daily Dune Games", "Dunedle es una colección de juegos diarios inspirados en el universo de Dune. Pon a prueba tus conocimientos con un Wordle y otros retos.": "Dunedle is a collection of daily games inspired by the Dune universe. Test your knowledge with a Wordle and other challenges."};
+        const I18N_PATTERNS_EN = [["^Tu racha actual: 🔥(\\d+)$", "Your current streak: 🔥$1"], ["^Tu facción: (.+)$", "Your faction: $1"], ["^🔒 (Facción|Género|Libro) \\((\\d+) fallos? más\\)$", "🔒 {T:1} ($2 more miss{S:2})"], ["^(🏛️|🚻|📖) (Facción|Género|Libro): (.*)$", "$1 {T:2}: $3"], ["^(\\d+) h (\\d+) min (\\d+) s$", "$1h $2m $3s"]];
+        const I18N_DATA_EN = {"words": {"ARRAKIS": ["ARRAKIS", "The desert planet, the only source of melange."], "SHAI-HULUD": ["SHAI-HULUD", "The great sandworm, the Maker."], "DESTILTRAJE": ["STILLSUIT", "A garment that reclaims the body's moisture in the desert."], "GOM JABBAR": ["GOM JABBAR", "A poisoned needle used to test for humanity."], "MUAD'DIB": ["MUAD'DIB", "Paul's Fremen name: 'the desert mouse'."], "SARDAUKAR": ["SARDAUKAR", "The Emperor's fearsome fanatical soldiers."], "FEDAYKIN": ["FEDAYKIN", "The Fremen death commandos led by Paul."], "MENTAT": ["MENTAT", "A human trained to think like a computer."], "LANDSRAAD": ["LANDSRAAD", "The council that brings together all the great noble houses."], "CHOAM": ["CHOAM", "The company that controls trade across the entire Empire."], "KANLY": ["KANLY", "A formal vendetta between noble houses, with strict rules."], "SIETCH": ["SIETCH", "A communal Fremen refuge hidden in the rock."], "HARKONNEN": ["HARKONNEN", "The rival noble house, sworn enemy of the Atreides."], "ATREIDES": ["ATREIDES", "The noble house of Duke Leto and his son Paul."], "CUCHILLO CRIS": ["CRYSKNIFE", "A Fremen ceremonial knife carved from a sandworm tooth."], "CALADAN": ["CALADAN", "The home planet of House Atreides, a world of water and forests."], "ARRAKEEN": ["ARRAKEEN", "The capital of Arrakis, seat of power on the desert planet."], "KAITAIN": ["KAITAIN", "The luxurious capital of the Empire, home of House Corrino."], "CORRINO": ["CORRINO", "The imperial house that holds the Golden Lion Throne."], "PADISHAH": ["PADISHAH", "The title of the Emperor, who rules the entire known Empire."], "USUL": ["USUL", "The secret name the Fremen give Paul: 'the base of the pillar'."], "TAHADDI": ["TAHADDI", "A formal Fremen challenge to combat, often to the death."], "GOLPEADOR": ["THUMPER", "A device that pounds the sand to attract sandworms."], "RICHESE": ["RICHESE", "A great noble house known for its craftsmanship and technology."], "OJOS DE IBAD": ["EYES OF IBAD", "The color the eyes take on in someone who consumes a lot of spice."], "TLEILAXU": ["TLEILAXU", "The unsettling geneticists responsible for the gholas."], "IXIANOS": ["IXIANS", "The people of House Ix, masters of forbidden technology."], "NAIB": ["NAIB", "A title given to the leaders of a Fremen sietch."], "REVERENDA": ["REVEREND", "Title of the leaders of the Bene Gesserit sisterhood: Reverend Mother."], "PRECIENCIA": ["PRESCIENCE", "Paul's ability to see possible futures."], "GHOLA": ["GHOLA", "A human cloned from the cells of a dead person."], "AXOLOTL": ["AXOLOTL", "The Tleilaxu tanks where gholas are grown."], "HACEDOR": ["MAKER", "Another name the Fremen give the great sandworm."], "PLANETOLOGO": ["PLANETOLOGIST", "Liet-Kynes' official post on Arrakis."], "WALLACH IX": ["WALLACH IX", "The home planet of the Bene Gesserit sisterhood."], "GIEDI PRIME": ["GIEDI PRIME", "The industrial home planet of House Harkonnen."], "MAHDI": ["MAHDI", "Another messianic title the Fremen give Paul."], "LISAN AL-GAIB": ["LISAN AL-GAIB", "'The Voice from the Outer World,' a Fremen prophecy about Paul."], "AGUA DE VIDA": ["WATER OF LIFE", "The deadly substance that transforms a woman into a Reverend Mother."], "LIBRO AZHAR": ["AZHAR BOOK", "The sacred, secret text of the Bene Gesserit sisterhood."], "ESPECIA": ["SPICE", "The common name for melange, the substance everyone covets."], "MELANGE": ["MELANGE", "The true name of the spice everyone covets."], "MAULA": ["MAULA", "A pistol that fires poisoned darts, undetectable by shields."], "BALISET": ["BALISET", "The nine-stringed instrument played by Gurney Halleck."], "PRANA BINDU": ["PRANA BINDU", "Bene Gesserit training for total control of the body."], "AMTAL": ["AMTAL", "The rule that tests something until it is destroyed."], "CASA IX": ["HOUSE IX", "The great noble house specializing in technology and inventions."], "ESCUDO": ["SHIELD", "A personal force field that stops anything fast, but not the slow blade."], "HOLTZMAN": ["HOLTZMAN", "The physical effect that makes personal shields possible."], "SAYYADINA": ["SAYYADINA", "Title of a Fremen priestess-in-training or spiritual leader."], "PAUL": ["PAUL", "The heir of House Atreides and protagonist of the saga."], "IRULAN": ["IRULAN", "The princess and chronicler, daughter of Emperor Shaddam IV."], "RABBAN": ["RABBAN", "The Baron's brutal nephew, who rules Arrakis with an iron fist."], "JESSICA": ["JESSICA", "The Bene Gesserit lady, Duke Leto's concubine and Paul's mother."], "VLADIMIR": ["VLADIMIR", "The first name of the cruel Baron Harkonnen."], "LETO": ["LETO", "The Red Duke, father of Paul and leader of House Atreides."], "DUNCAN": ["DUNCAN", "The loyal Atreides swordmaster, later resurrected as a ghola."], "GURNEY": ["GURNEY", "The troubadour and weapons master, loyal to the Atreides."], "CHANI": ["CHANI", "The Fremen warrior who becomes Paul's beloved."], "STILGAR": ["STILGAR", "The naib of Sietch Tabr who takes in Paul and Jessica."], "KYNES": ["KYNES", "The Imperial planetologist secretly loyal to the Fremen."], "FEYD": ["FEYD", "The Baron's ambitious and deadly younger nephew."], "HAWAT": ["HAWAT", "The master of assassins and mentat of House Atreides."], "YUEH": ["YUEH", "The doctor who betrays the Atreides under duress."], "SHADDAM": ["SHADDAM", "The name of the Padishah Emperor, fourth of his name."], "HARAH": ["HARAH", "The Fremen woman who keeps Paul's household in the sietch."], "JAMIS": ["JAMIS", "The Fremen who challenges Paul to a fight to the death."], "FENRING": ["FENRING", "The loyal friend and secret agent of Emperor Shaddam IV."], "HASIMIR": ["HASIMIR", "Count Fenring's first name."], "PITER": ["PITER", "The twisted mentat in the service of Baron Harkonnen."], "IDAHO": ["IDAHO", "The surname of the loyal Atreides swordmaster Duncan."], "ZENSUNNI": ["ZENSUNNI", "The wandering people from whom the Fremen culturally descend."], "BUTLERIANA": ["BUTLERIAN", "The historic jihad that destroyed the thinking machines."], "ORNITOPTERO": ["ORNITHOPTER", "A flapping-wing aircraft used to cross the desert."], "CARTHAG": ["CARTHAG", "The former Harkonnen capital on the planet Arrakis."], "SIETCH TABR": ["SIETCH TABR", "The sietch led by Stilgar, home of Paul and Jessica."], "GAMONT": ["GAMONT", "A great noble house known for its culture of pleasure and art."], "ECAZ": ["ECAZ", "A great noble house famous for its master woodcarvers."], "ATOMICAS": ["ATOMICS", "The nuclear weapons each great house keeps as a deterrent."], "CONVENCION": ["CONVENTION", "The treaty that bans the use of atomic weapons between houses."], "TEMOR": ["FEAR", "What the Bene Gesserit litany calls 'the mind-killer'."], "LETANIA": ["LITANY", "The text the Bene Gesserit recite to master their fear."], "LA VOZ": ["THE VOICE", "The Bene Gesserit technique for controlling others with tone of voice."], "KULL WAHAD": ["KULL WAHAD", "A Fremen exclamation of surprise or deep amazement."], "AL-LAT": ["AL-LAT", "The Fremen name for the sun of Arrakis."], "TUPILE": ["TUPILE", "The secret planet that serves as a refuge for defeated houses."], "QIZARATE": ["QIZARATE", "The religious and missionary body that grows out of the cult of Muad'Dib."], "DESIERTO": ["DESERT", "The landscape that completely dominates the planet Arrakis."], "CRUCERO": ["HEIGHLINER", "The enormous Guild ship that transports entire fleets."], "NAVEGANTE": ["NAVIGATOR", "The mutated Guild pilot who folds space using the spice."], "PLEGADO": ["FOLDSPACE", "Traveling between stars by folding space itself."], "COFRADIA": ["GUILD", "The organization that controls all interstellar travel."], "LEON DORADO": ["GOLDEN LION", "The throne occupied by the Padishah Emperor of the Empire."], "EMPERADOR": ["EMPEROR", "The supreme ruler of the entire known Empire."], "IMPERIO": ["EMPIRE", "The vast political domain that spans thousands of worlds."], "TORMENTA": ["STORM", "The violent Coriolis storm that lashes Arrakis."], "TRAICION": ["TREACHERY", "What the doctor Yueh commits against House Atreides."], "VENGANZA": ["REVENGE", "What drives Paul after the fall of his house."], "PROFECIA": ["PROPHECY", "The Fremen legend of a messiah from the outer world."], "MISIONARIA": ["MISSIONARIA", "The Bene Gesserit program that seeded false prophecies among the Fremen."], "KORBA": ["KORBA", "A religious leader of Muad'Dib's movement implicated in a conspiracy."], "BANNERJEE": ["BANNERJEE", "The Emperor's head of security at his palace in Arrakeen."], "DHURI": ["DHURI", "The wife of the fedaykin Otheym."], "LETO II": ["LETO II", "The son of Paul and Chani, whose birth is decisive in the story."], "GHANIMA": ["GHANIMA", "The daughter of Paul and Chani, twin sister of Leto II."], "HAYT": ["HAYT", "The name of the Duncan Idaho ghola delivered to Paul by the Tleilaxu."], "SCYTALE": ["SCYTALE", "A Tleilaxu Face Dancer who plots against Paul Atreides."], "EDRIC": ["EDRIC", "The Guild Navigator who helps hide the conspiracy."], "BIJAZ": ["BIJAZ", "An enigmatic short Tleilaxu, key to the plan against Paul."], "OTHEYM": ["OTHEYM", "The former fedaykin who warns Paul of the conspiracy."], "LICHNA": ["LICHNA", "Otheym's daughter, whose identity is used to deceive Paul."], "FAROK": ["FAROK", "A jihad veteran who ends up plotting against Paul."]}, "names": {"Barón Vladimir Harkonnen": "Baron Vladimir Harkonnen", "Princesa Irulan": "Princess Irulan", "Conde Hasimir Fenring": "Count Hasimir Fenring"}, "charDesc": {"Paul Atreides": "The Kwisatz Haderach and Fremen Messiah.", "Leto Atreides": "The Red Duke, Paul's father.", "Lady Jessica": "Reverend Mother and Paul's mother.", "Stilgar": "Naib of Sietch Tabr.", "Duncan Idaho": "The Atreides' loyal swordmaster, later resurrected as a ghola.", "Gurney Halleck": "Weapons master and troubadour of House Atreides.", "Barón Vladimir Harkonnen": "The cruel and cunning lord of House Harkonnen.", "Feyd-Rautha": "The Baron's ambitious and deadly nephew.", "Chani": "Fremen warrior and Paul's companion.", "Liet-Kynes": "Imperial planetologist secretly loyal to the Fremen.", "Princesa Irulan": "Imperial chronicler and daughter of Emperor Shaddam IV.", "Thufir Hawat": "The elderly mentat and master of assassins loyal to House Atreides.", "Piter De Vries": "The twisted, perverse mentat in the service of Baron Harkonnen.", "Wellington Yueh": "The Suk doctor who betrays the Atreides under duress.", "Glossu Rabban": "The Baron's brutal nephew, who rules Arrakis with an iron fist.", "Jamis": "The Fremen who challenges Paul to a duel to the death.", "Harah": "Jamis's widow, who keeps Paul's household in the sietch.", "Conde Hasimir Fenring": "Emperor Shaddam IV's cunning confidant and secret agent.", "Lady Margot Fenring": "Bene Gesserit lady and wife of Count Fenring.", "Shaddam IV": "The Padishah Emperor who rules the entire known Empire.", "Gaius Helen Mohiam": "The Reverend Mother who subjects Paul to the gom jabbar test.", "Alia Atreides": "Paul's sister, born fully conscious thanks to the spice.", "Shadout Mapes": "The housekeeper of the Atreides residence in Arrakeen, of Fremen origin.", "Esmar Tuek": "The smuggler leader who shelters the Atreides survivors.", "Iakin Nefud": "The Harkonnen captain of the guard in Arrakeen.", "Korba": "Religious leader of Muad'Dib's movement who ends up implicated in the conspiracy.", "Bannerjee": "In charge of imperial security in Arrakeen.", "Dhuri": "Wife of the fedaykin Otheym.", "Leto II Atreides": "Son of Paul and Chani, whose birth is decisive in the story.", "Ghanima Atreides": "Daughter of Paul and Chani, twin sister of Leto II.", "Hayt": "Duncan Idaho ghola delivered to Paul by the Tleilaxu.", "Scytale": "Tleilaxu Face Dancer who takes part in a conspiracy against Paul Atreides.", "Edric": "Spacing Guild Navigator who helps hide the conspiracy against Paul.", "Bijaz": "Enigmatic short-statured Tleilaxu who plays a key role in the plan against Paul.", "Otheym": "Former fedaykin who warns Paul of the conspiracy.", "Lichna": "Otheym's daughter, whose identity is used to deceive Paul.", "Farok": "Jihad veteran who ends up taking part in the conspiracy against Paul."}, "movieDesc": {"Interpretada por Sharon Duncan-Brewster. En la película, a diferencia del libro, Liet-Kynes es mujer.": "Played by Sharon Duncan-Brewster. In the film, unlike the book, Liet-Kynes is a woman."}, "org": {"Casa Atreides": "House Atreides", "Casa Harkonnen": "House Harkonnen", "Casa Corrino": "House Corrino", "Fremen / Imperio": "Fremen / Empire", "Casa Atreides / Imperio": "House Atreides / Empire", "Contrabandistas": "Smugglers", "Cofradía Espacial": "Spacing Guild"}, "planet": {"Desconocido": "Unknown"}, "gender": {"Hombre": "Male", "Mujer": "Female"}, "hair": {"Castaño": "Brown", "Negro": "Black", "Rubio bronce": "Bronze blond", "Negro rizado": "Curly black", "Rubio rojizo": "Reddish blond", "Calvo": "Bald", "Rubio": "Blond", "Rubio dorado": "Golden blond", "Canoso": "Gray", "Gris": "Gray", "Cobrizo": "Copper", "Variable": "Variable", "Ninguno": "None", "Negro azulado": "Blue-black"}, "movie": {"Ambas películas": "Both films", "Solo Dune (2021)": "Dune (2021) only", "Solo Parte Dos (2024)": "Part Two (2024) only", "No aparece en las películas": "Not in the films"}, "first": {"El Mesías de Dune": "Dune Messiah"}, "quotes": {"El miedo es el asesino de la mente.": ["Fear is the mind-killer.", "Litany Against Fear."], "Un comienzo es un tiempo muy delicado.": ["A beginning is a very delicate time.", "Manual of Muad'Dib."], "El que puede destruir una cosa, la controla.": ["He who can destroy a thing controls it.", "Paul's reflection on the true meaning of power."], "Un líder fremen sirve, no gobierna.": ["A Fremen leader serves; he does not rule.", "Stilgar's words on leadership among his people."], "Quien controla la especia, controla el universo.": ["He who controls the spice controls the universe.", "A reflection on the true power behind the imperial throne."], "Un buen gobernante aprende primero a servir.": ["A good ruler first learns to serve.", "A lesson the Duke passes on to his son Paul."], "La lealtad de los hombres se gana, nunca se ordena.": ["Men's loyalty is earned, never commanded.", "The philosophy of the Atreides' weapons master."], "El poder atrae a quienes desean abusar de él.": ["Power attracts those who wish to abuse it.", "A warning whispered in the halls of imperial power."], "Sin honor, la victoria no vale nada.": ["Without honor, victory is worth nothing.", "A code Duncan defends to his last breath."], "Quien no puede cambiar su propio pensamiento, no cambiará nada.": ["Whoever cannot change his own mind will change nothing.", "A reflection recorded in her imperial chronicles."], "Todo hombre necesita ver su propia sangre para saber que es mortal.": ["Every man needs to see his own blood to know he is mortal.", "A twisted philosophy about power and fear."], "Aprende a conocer a tus enemigos antes que a tus amigos.": ["Learn to know your enemies before your friends.", "A maxim of the old mentat and master of assassins."], "Un mentat nunca deja de calcular.": ["A mentat never stops computing.", "A description of mentat mental training."], "El desierto no olvida a quien lo desafía.": ["The desert does not forget those who defy it.", "A warning Jamis gives to outsiders."], "Una Bene Gesserit nunca actúa por impulso.": ["A Bene Gesserit never acts on impulse.", "A fundamental principle of Bene Gesserit discipline."], "El verdadero poder no necesita anunciarse.": ["True power does not need to announce itself.", "An observation on the hidden influence of the Bene Gesserit."], "Un Emperador gobierna miles de mundos, pero no el corazón de su pueblo.": ["An Emperor rules thousands of worlds, but not the heart of his people.", "A late reflection on the limits of imperial power."]}, "trivia": {"¿Quién lidera el sietch Tabr?": {"prompt": "Who leads Sietch Tabr?", "options": ["Duncan Idaho", "Stilgar", "Gurney Halleck", "Thufir Hawat"], "answer": "Stilgar", "explanation": "Stilgar is the Fremen leader of Sietch Tabr."}, "¿Quién es el padre de Chani?": {"prompt": "Who is Chani's father?", "options": ["Pardot Kynes", "Leto Atreides", "Liet-Kynes", "Stilgar"], "answer": "Liet-Kynes", "explanation": "Liet-Kynes is Chani's father in the original novels."}, "¿Qué cargo desempeña Duncan Idaho al servicio de los Atreides?": {"prompt": "What post does Duncan Idaho hold in the service of the Atreides?", "options": ["Guild Navigator", "Swordmaster", "Emperor of the Empire", "Harkonnen Mentat"], "answer": "Swordmaster", "explanation": "Duncan Idaho is a distinguished swordmaster of House Atreides."}, "¿Qué habilidad caracteriza a Gurney Halleck además de su capacidad de combate?": {"prompt": "What skill sets Gurney Halleck apart besides his fighting ability?", "options": ["He is a musician and troubadour", "He is a space navigator", "He is a planetologist", "He is a spice master"], "answer": "He is a musician and troubadour", "explanation": "Gurney is a warrior who also plays the baliset and sings."}, "¿Quién es el mentat que sirve a la Casa Atreides?": {"prompt": "Who is the mentat serving House Atreides?", "options": ["Piter de Vries", "Thufir Hawat", "Glossu Rabban", "Hasimir Fenring"], "answer": "Thufir Hawat", "explanation": "Thufir Hawat is the mentat in the service of the Atreides."}, "¿Qué profesión tiene el doctor Wellington Yueh?": {"prompt": "What is Dr. Wellington Yueh's profession?", "options": ["Imperial planetologist", "Suk School physician", "Space navigator", "Ginaz swordmaster"], "answer": "Suk School physician", "explanation": "Yueh is a physician trained at the Suk School."}, "¿Quién es el emperador al comienzo de la primera novela de Dune?": {"prompt": "Who is the Emperor at the start of the first Dune novel?", "options": ["Leto I", "Shaddam IV", "Paul Atreides", "Feyd-Rautha"], "answer": "Shaddam IV", "explanation": "Shaddam IV of House Corrino sits on the imperial throne."}, "¿Quién es Irulan en la primera novela?": {"prompt": "Who is Irulan in the first novel?", "options": ["The Baron Harkonnen's daughter", "Emperor Shaddam IV's daughter", "Chani's sister", "Paul's mother"], "answer": "Emperor Shaddam IV's daughter", "explanation": "Princess Irulan is the daughter of Emperor Shaddam IV."}, "¿Qué parentesco tiene Feyd-Rautha con el barón Vladimir Harkonnen?": {"prompt": "How is Feyd-Rautha related to Baron Vladimir Harkonnen?", "options": ["He is his son", "He is his nephew", "He is his brother", "He is his grandson"], "answer": "He is his nephew", "explanation": "Feyd-Rautha is the Baron's nephew and his possible heir."}, "¿Con qué otro nombre se conoce a Glossu Rabban?": {"prompt": "What other name is Glossu Rabban known by?", "options": ["Rabban the Wise", "Rabban the Just", "The Beast Rabban", "Rabban the Navigator"], "answer": "The Beast Rabban", "explanation": "Glossu Rabban is known by the nickname 'the Beast'."}, "¿Quiénes son los Sardaukar?": {"prompt": "Who are the Sardaukar?", "options": ["The Emperor's elite soldiers", "The Fremen priests", "The Guild navigators", "The scientists of Ix"], "answer": "The Emperor's elite soldiers", "explanation": "The Sardaukar are the feared elite imperial troops."}, "¿Para qué sirve un destiltraje fremen?": {"prompt": "What is a Fremen stillsuit for?", "options": ["Breathing underwater", "Conserving and recovering body water", "Detecting spice from a distance", "Withstanding weapons fire"], "answer": "Conserving and recovering body water", "explanation": "The stillsuit reduces moisture loss and recovers water from the body."}, "¿Para qué se utiliza un golpeador en Arrakis?": {"prompt": "What is a thumper used for on Arrakis?", "options": ["Calling sandworms", "Extracting water from rocks", "Measuring spice concentration", "Communicating with the Guild"], "answer": "Calling sandworms", "explanation": "The thumper produces vibrations that attract sandworms."}, "¿De qué está hecha tradicionalmente la hoja de un crysknife?": {"prompt": "What is a crysknife blade traditionally made of?", "options": ["Ixian crystal", "Imperial metal", "A sandworm tooth", "Hardened wood"], "answer": "A sandworm tooth", "explanation": "The Fremen crysknife is traditionally made from a sandworm tooth."}, "¿Qué característica distingue a un ornitóptero?": {"prompt": "What distinguishes an ornithopter?", "options": ["Its wings beat to fly", "It can only travel underground", "It moves on wheels over the sand", "It travels between stars without a navigator"], "answer": "Its wings beat to fly", "explanation": "Ornithopters are aircraft whose wings beat like those of a bird."}, "¿Qué capacidad está relacionada con la especia melange?": {"prompt": "Which ability is linked to the spice melange?", "options": ["Permanent invisibility", "Prescience", "Automatic resurrection", "Direct control of sandworms"], "answer": "Prescience", "explanation": "Melange can expand perception and make forms of prescience possible."}, "¿Qué es CHOAM en el Imperio de Dune?": {"prompt": "What is CHOAM in the Dune Empire?", "options": ["A religious order", "A commercial organization", "A school for mentats", "A Fremen military unit"], "answer": "A commercial organization", "explanation": "CHOAM is a powerful commercial organization of the Empire."}, "¿Qué representa el Landsraad?": {"prompt": "What does the Landsraad represent?", "options": ["The assembly of the Great Houses", "The council of the navigators", "The Bene Gesserit hierarchy", "Paul's personal guard"], "answer": "The assembly of the Great Houses", "explanation": "The Landsraad brings together the Great Houses of the Empire."}, "¿Qué contiene el Gom Jabbar utilizado en la prueba de Paul?": {"prompt": "What does the gom jabbar used in Paul's test contain?", "options": ["A drop of the Water of Life", "A deadly poison", "Concentrated melange", "Sandworm blood"], "answer": "A deadly poison", "explanation": "The gom jabbar is a poisoned needle used during the Bene Gesserit test."}, "¿Quién es Alia Atreides?": {"prompt": "Who is Alia Atreides?", "options": ["Paul and Chani's daughter", "Lady Jessica and Duke Leto's daughter", "The Baron Harkonnen's daughter", "Irulan's sister"], "answer": "Lady Jessica and Duke Leto's daughter", "explanation": "Alia is the daughter of Lady Jessica and Duke Leto, and Paul's sister."}}};
+
+        // t('texto en español', {params}) -> texto en el idioma actual. Si falta traducción, devuelve el español.
+        function t(key, params) {
+            let s = key;
+            if(Lang.current === 'en' && Object.prototype.hasOwnProperty.call(I18N_UI_EN, key)) s = I18N_UI_EN[key];
+            if(params) s = s.replace(/\{(\w+)\}/g, (_, k) => (params[k] !== undefined ? params[k] : '{' + k + '}'));
+            return s;
+        }
+
+        // Altura: en español en cm; en inglés (EE. UU.) en pies y pulgadas.
+        function formatHeight(cm) {
+            if(Lang.current !== 'en') return cm + ' cm';
+            const totalIn = Math.round(cm / 2.54);
+            return Math.floor(totalIn / 12) + "'" + (totalIn % 12) + '"';
+        }
+
+        // Traduce en vivo los textos de la interfaz (nodos de texto y atributos title/aria-label/placeholder)
+        // buscando el texto español exacto en el diccionario. Solo actúa si el idioma es inglés.
+        const Translator = {
+            patterns: [],
+            norm(s) { return s.replace(/\s+/g, ' ').trim(); },
+            lookup(k) { return Object.prototype.hasOwnProperty.call(I18N_UI_EN, k) ? I18N_UI_EN[k] : k; },
+            translateText(raw) {
+                const core = this.norm(raw);
+                if(!core) return null;
+                if(Object.prototype.hasOwnProperty.call(I18N_UI_EN, core)) return I18N_UI_EN[core];
+                for(const [re, tpl] of this.patterns){
+                    const m = core.match(re);
+                    if(m){
+                        return tpl
+                            .replace(/\{T:(\d)\}/g, (_, i) => this.lookup(m[i]))
+                            .replace(/\{S:(\d)\}/g, (_, i) => (parseInt(m[i], 10) === 1 ? '' : 'es'))
+                            .replace(/\$(\d)/g, (_, i) => m[i]);
+                    }
+                }
+                return null;
+            },
+            translateAttrs(el) {
+                ['title', 'aria-label', 'placeholder'].forEach(a => {
+                    if(el.hasAttribute && el.hasAttribute(a)){
+                        const v = el.getAttribute(a), tr = this.translateText(v);
+                        if(tr !== null && tr !== v) el.setAttribute(a, tr);
+                    }
+                });
+            },
+            translateNode(node) {
+                if(node.nodeType === 3){
+                    const v = node.nodeValue, tr = this.translateText(v);
+                    if(tr !== null){
+                        const nv = v.match(/^\s*/)[0] + tr + v.match(/\s*$/)[0];
+                        if(nv !== v) node.nodeValue = nv;
+                    }
+                } else if(node.nodeType === 1){
+                    if(node.tagName === 'SCRIPT' || node.tagName === 'STYLE') return;
+                    this.translateAttrs(node);
+                    node.childNodes.forEach(c => this.translateNode(c));
+                }
+            },
+            start() {
+                if(Lang.current !== 'en') return;
+                this.patterns = I18N_PATTERNS_EN.map(([s, tpl]) => [new RegExp(s), tpl]);
+                document.documentElement.lang = 'en';
+                document.title = t(document.title);
+                const md = document.querySelector('meta[name=description]');
+                if(md) md.content = t(md.content);
+                this.translateNode(document.body);
+                new MutationObserver((records) => {
+                    records.forEach(r => {
+                        if(r.type === 'childList') r.addedNodes.forEach(n => this.translateNode(n));
+                        else if(r.type === 'characterData') this.translateNode(r.target);
+                        else if(r.type === 'attributes') this.translateAttrs(r.target);
+                    });
+                }).observe(document.body, { childList: true, subtree: true, characterData: true,
+                    attributes: true, attributeFilter: ['title', 'aria-label', 'placeholder'] });
+            }
+        };
+
+        // Sustituye los datos del juego (palabras, personajes, frases, trivia) por su versión en inglés.
+        function applyLanguageData() {
+            if(Lang.current !== 'en') return;
+            const D = I18N_DATA_EN;
+            const tn = (n) => (D.names[n] !== undefined ? D.names[n] : n);
+            const mv = (map, v) => (map[v] !== undefined ? map[v] : v);
+            DUNEDATA_WORDS = DUNEDATA_WORDS.map(w => { const e = D.words[w.word]; return e ? { word: e[0], desc: e[1] } : w; });
+            const loc = (c, descFn) => Object.assign({}, c, {
+                name: tn(c.name), desc: descFn(c),
+                org: mv(D.org, c.org), planet: mv(D.planet, c.planet), gender: mv(D.gender, c.gender),
+                hairColor: mv(D.hair, c.hairColor), movie: mv(D.movie, c.movie),
+                first: c.first === undefined ? c.first : mv(D.first, c.first)
+            });
+            DUNEDATA_CHARACTERS = DUNEDATA_CHARACTERS.map(c => loc(c, x => (D.charDesc[x.name] !== undefined ? D.charDesc[x.name] : x.desc)));
+            DUNEDATA_MOVIE_CHARACTERS = DUNEDATA_MOVIE_CHARACTERS.map(c => loc(c, x =>
+                (D.movieDesc[x.desc] !== undefined ? D.movieDesc[x.desc] : x.desc.replace(/^Interpretad[oa] por /, 'Played by '))));
+            DUNEDATA_QUOTES = DUNEDATA_QUOTES.map(q => {
+                const e = D.quotes[q.text];
+                return Object.assign({}, q, { text: e ? e[0] : q.text, context: e ? e[1] : q.context, char: tn(q.char) });
+            });
+            KANLY_TRIVIA = KANLY_TRIVIA.map(x => D.trivia[x.prompt] || x);
+            DUNEDATA_ALL_NAMES = Array.from(new Set([...DUNEDATA_CHARACTERS.map(c => c.name), ...DUNEDATA_QUOTES.map(q => q.char)]));
+        }
+
         /* --- BASE DE DATOS --- */
-        const DUNEDATA_WORDS = [
+        let DUNEDATA_WORDS = [
             { word: "ARRAKIS", desc: "El planeta desierto, única fuente de la melange." },
             { word: "SHAI-HULUD", desc: "El gran gusano de arena, el Hacedor." },
             { word: "DESTILTRAJE", desc: "Prenda que recupera la humedad corporal en el desierto." },
@@ -491,7 +635,7 @@
             { word: "FAROK", desc: "Veterano de la yihad que acaba conspirando contra Paul." }
         ];
 
-        const DUNEDATA_CHARACTERS = [
+        let DUNEDATA_CHARACTERS = [
             { name: "Paul Atreides", emojis: ["🏜️","👁️","🐭","⚔️"], desc: "El Kwisatz Haderach y Mesías Fremen.", org: "Casa Atreides", planet: "Arrakis", first: "Dune", gender: "Hombre", height: 180, hairColor: "Castaño", movie: "Ambas películas" },
             { name: "Leto Atreides", emojis: ["🐂","🏛️","🛡️","👑"], desc: "El Duque Rojo, padre de Paul.", org: "Casa Atreides", planet: "Caladan", first: "Dune", gender: "Hombre", height: 183, hairColor: "Negro", movie: "Solo Dune (2021)" },
             { name: "Lady Jessica", emojis: ["🧘","🧬","💧","👁️"], desc: "Reverenda Madre y madre de Paul.", org: "Bene Gesserit", planet: "Caladan", first: "Dune", gender: "Mujer", height: 170, hairColor: "Rubio bronce", movie: "Ambas películas" },
@@ -531,7 +675,7 @@
             { name: "Iakin Nefud", emojis: ["🛡️","⚔️","🖤","🏰"], desc: "El capitán de la guardia harkonnen en Arrakeen.", org: "Casa Harkonnen", planet: "Giedi Prime", first: "Dune", gender: "Hombre", height: 172, hairColor: "Castaño", movie: "No aparece en las películas" }
         ];
 
-        const DUNEDATA_QUOTES = [
+        let DUNEDATA_QUOTES = [
             { text: "El miedo es el asesino de la mente.", char: "Paul Atreides", context: "Letanía contra el miedo.", book: "Dune" },
             { text: "Un comienzo es un tiempo muy delicado.", char: "Princesa Irulan", context: "Manual de Muad'Dib.", book: "Dune" },
             { text: "El que puede destruir una cosa, la controla.", char: "Paul Atreides", context: "Reflexión de Paul sobre el verdadero significado del poder.", book: "Dune" },
@@ -553,7 +697,7 @@
 
         // Une nombres de personajes con emoji y autores de frases, para que el
         // buscador de sugerencias siempre incluya cualquier respuesta correcta posible.
-        const DUNEDATA_ALL_NAMES = Array.from(new Set([
+        let DUNEDATA_ALL_NAMES = Array.from(new Set([
             ...DUNEDATA_CHARACTERS.map(c => c.name),
             ...DUNEDATA_QUOTES.map(q => q.char)
         ]));
@@ -563,7 +707,7 @@
             getSeed() { return new Date().getFullYear() * 10000 + (new Date().getMonth() + 1) * 100 + new Date().getDate(); },
             getIndex(arr, offset) { return (this.getSeed() + (offset || 0)) % arr.length; },
             getState(key) {
-                const s = localStorage.getItem('dunedle_' + key);
+                const s = localStorage.getItem('dunedle_' + key + Lang.suffix);
                 if(!s) return { finished: false, won: false, history: [], seed: this.getSeed() };
                 const data = JSON.parse(s);
                 if(data.seed !== this.getSeed()) return { finished: false, won: false, history: [], seed: this.getSeed() };
@@ -572,7 +716,7 @@
             },
             saveState(key, data) {
                 data.seed = this.getSeed();
-                localStorage.setItem('dunedle_' + key, JSON.stringify(data));
+                localStorage.setItem('dunedle_' + key + Lang.suffix, JSON.stringify(data));
             }
         };
 
@@ -588,18 +732,26 @@
             { id: 'wordle_5',  game: 'wordle', threshold: 5,  icon: '🏜️', title: 'Aprendiz del Desierto', desc: 'Acierta 5 palabras del día.' },
             { id: 'wordle_15', game: 'wordle', threshold: 15, icon: '🐫', title: 'Guía Fremen',            desc: 'Acierta 15 palabras del día.' },
             { id: 'wordle_30', game: 'wordle', threshold: 30, icon: '👑', title: 'Maestro de Arrakis',     desc: 'Acierta 30 palabras del día.' },
+            { id: 'wordle_50', game: 'wordle', threshold: 50, icon: '🏛️', title: 'Emperador del Léxico',  desc: 'Acierta 50 palabras del día.' },
             { id: 'emoji_5',   game: 'emoji',  threshold: 5,  icon: '👁️', title: 'Observador',             desc: 'Identifica 5 personajes por emojis.' },
             { id: 'emoji_15',  game: 'emoji',  threshold: 15, icon: '🎭', title: 'Reconocedor',            desc: 'Identifica 15 personajes por emojis.' },
             { id: 'emoji_30',  game: 'emoji',  threshold: 30, icon: '🧠', title: 'Sabio del Imperio',      desc: 'Identifica 30 personajes por emojis.' },
+            { id: 'emoji_50',  game: 'emoji',  threshold: 50, icon: '👑', title: 'Rostro Conocido',        desc: 'Identifica 50 personajes por emojis.' },
             { id: 'quote_5',   game: 'quote',  threshold: 5,  icon: '📜', title: 'Aprendiz de Irulan',     desc: 'Acierta 5 frases del día.' },
             { id: 'quote_15',  game: 'quote',  threshold: 15, icon: '✍️', title: 'Cronista',               desc: 'Acierta 15 frases del día.' },
             { id: 'quote_30',  game: 'quote',  threshold: 30, icon: '📚', title: 'Historiador Imperial',   desc: 'Acierta 30 frases del día.' },
+            { id: 'quote_50',  game: 'quote',  threshold: 50, icon: '🖋️', title: 'Voz de Muad\'Dib',       desc: 'Acierta 50 frases del día.' },
             { id: 'character_5',  game: 'character', threshold: 5,  icon: '🔍', title: 'Investigador',        desc: 'Acierta 5 veces en ¿Quién es?' },
             { id: 'character_15', game: 'character', threshold: 15, icon: '🕵️', title: 'Detective de Arrakis', desc: 'Acierta 15 veces en ¿Quién es?' },
             { id: 'character_30', game: 'character', threshold: 30, icon: '🧬', title: 'Genetista Imperial',   desc: 'Acierta 30 veces en ¿Quién es?' },
-            { id: 'total_10',  game: 'total',  threshold: 10, icon: '⭐', title: 'Iniciado',               desc: 'Acierta 10 retos en total, entre los cuatro juegos.' },
-            { id: 'total_30',  game: 'total',  threshold: 30, icon: '🌟', title: 'Adepto',                 desc: 'Acierta 30 retos en total, entre los cuatro juegos.' },
-            { id: 'total_60',  game: 'total',  threshold: 60, icon: '🏆', title: 'Leyenda de Dunedle',     desc: 'Acierta 60 retos en total, entre los cuatro juegos.' }
+            { id: 'character_50', game: 'character', threshold: 50, icon: '🩻', title: 'Archivo Bene Gesserit', desc: 'Acierta 50 veces en ¿Quién es?' },
+            { id: 'kanly_5',   game: 'kanly', threshold: 5,  icon: '🗡️', title: 'Primera Sangre',         desc: 'Gana 5 duelos en el Modo Kanly.' },
+            { id: 'kanly_15',  game: 'kanly', threshold: 15, icon: '⚔️', title: 'Duelista',               desc: 'Gana 15 duelos en el Modo Kanly.' },
+            { id: 'kanly_30',  game: 'kanly', threshold: 30, icon: '🏅', title: 'Maestro Espadachín',      desc: 'Gana 30 duelos en el Modo Kanly.' },
+            { id: 'total_10',  game: 'total',  threshold: 10, icon: '⭐', title: 'Iniciado',               desc: 'Acierta 10 retos en total, entre todos los juegos.' },
+            { id: 'total_30',  game: 'total',  threshold: 30, icon: '🌟', title: 'Adepto',                 desc: 'Acierta 30 retos en total, entre todos los juegos.' },
+            { id: 'total_60',  game: 'total',  threshold: 60, icon: '🏆', title: 'Leyenda de Dunedle',     desc: 'Acierta 60 retos en total, entre todos los juegos.' },
+            { id: 'total_100', game: 'total',  threshold: 100, icon: '💎', title: 'Kwisatz Haderach',      desc: 'Acierta 100 retos en total, entre todos los juegos.' }
         ];
 
         const StatsManager = {
@@ -612,7 +764,7 @@
                 return s;
             },
             save(game, s) { localStorage.setItem(this.key(game), JSON.stringify(s)); },
-            getTotalWins() { return this.get('wordle').wins + this.get('emoji').wins + this.get('quote').wins + this.get('character').wins; },
+            getTotalWins() { return this.get('wordle').wins + this.get('emoji').wins + this.get('quote').wins + this.get('character').wins + this.get('kanly').wins; },
             record(game, won, attempts) {
                 const beforeTotal = this.getTotalWins();
                 const s = this.get(game);
@@ -661,6 +813,7 @@
                 const e = StatsManager.get('emoji');
                 const q = StatsManager.get('quote');
                 const c = StatsManager.get('character');
+                const k = StatsManager.get('kanly');
                 const maxDist = Math.max(1, ...w.distribution);
                 const distBars = w.distribution.map((count, i) => `
                     <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
@@ -690,6 +843,10 @@
                         <div class="card" style="cursor:default;">
                             <h2>🕵️ ¿Quién es?</h2>
                             ${statRow(c)}
+                        </div>
+                        <div class="card" style="cursor:default;">
+                            <h2>🗡️ Modo Kanly</h2>
+                            ${statRow(k)}
                         </div>
                         <button class="btn-action" onclick="Router.go('achievements')">🏆 VER LOGROS</button>
                         <button class="btn-action" onclick="Router.go('home')">INICIO</button>
@@ -873,19 +1030,56 @@
                         <div class="card" onclick="Router.go('emojis')"><h2>😀 Personaje del día</h2><p>Identifica símbolos.</p><span class="status-badge">${getBadge(sE)}</span></div>
                         <div class="card" onclick="Router.go('quotes')"><h2>💬 Frase del día</h2><p>¿Quién lo dijo?</p><span class="status-badge">${getBadge(sQ)}</span></div>
                         <div class="card" onclick="Router.go('whois')"><h2>🕵️ ¿Quién es?</h2><p>Compara datos y adivina.</p><span class="status-badge">${getBadge(sC)}</span></div>
+                        <div class="card" onclick="Router.go('kanly')"><h2>🗡️ Modo Kanly</h2><p>Duelo 1 contra 1 a contrarreloj.</p><span class="kanly-daily-checks" id="kanly-daily-checks"></span></div>
+                        <div class="card" onclick="Router.go('factionwar')"><h2>⚔️ Guerra de facciones</h2><p>Ranking global entre Atreides y Harkonnen.</p></div>
                         <div class="card" onclick="Router.go('stats')"><h2>📊 Estadísticas</h2><p>Tu progreso en Dunedle.</p></div>
                         <div class="card" onclick="Router.go('achievements')"><h2>🏆 Logros</h2><p>Desbloquea insignias jugando.</p></div>
-                        <div class="card" onclick="Router.go('kanly')"><h2>🗡️ Modo Kanly (TEST)</h2><p>Duelo 1 contra 1 a contrarreloj.</p></div>
-                        <div class="card" onclick="Router.go('factionwar')"><h2>⚔️ Guerra de facciones</h2><p>Ranking global entre Atreides y Harkonnen.</p></div>
                     </div>
                     <div class="feedback-box">
-                        <p>¿Encontraste un fallo o tienes una idea para el juego?</p>
-                        <a href="mailto:dunedle.es@gmail.com?subject=Feedback%20Dunedle" class="feedback-link">✉️ dunedle.es@gmail.com</a>
+                        <div class="social-row">
+                            <div class="social-item">
+                                <button class="contact-circle" onclick="toggleContactEmail()" aria-label="Mostrar correo de contacto">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="2" y="4.5" width="20" height="15" rx="1.5"></rect>
+                                        <path d="M3 6l9 6.5L21 6"></path>
+                                    </svg>
+                                </button>
+                                <div class="contact-label">Contacto</div>
+                            </div>
+                            <div class="social-item">
+                                <a class="contact-circle" href="https://ko-fi.com/dunedle" target="_blank" rel="noopener" aria-label="Donar en Ko-fi">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M2.5 6.5h16v9a5.5 5.5 0 0 1-5.5 5.5h-5a5.5 5.5 0 0 1-5.5-5.5v-9z"></path>
+                                        <path d="M18.5 8.2h2a3 3 0 0 1 0 6h-2"></path>
+                                        <path d="M9.6 13.1c-1.3-1.6.6-3.2 1.65-1.95.2.25.35.6.45 1 .1-.4.25-.75.45-1 1.05-1.25 2.95.35 1.65 1.95-.7.85-2.1 1.9-2.1 1.9s-1.4-1.05-2.1-1.9z" fill="currentColor" stroke-width="0.6"></path>
+                                    </svg>
+                                </a>
+                                <div class="contact-label">Ko-fi</div>
+                            </div>
+                            <div class="social-item">
+                                <!-- TODO: sustituye el href="#" por el enlace real a la página del otro juego -->
+                                <a class="contact-circle" href="#" target="_blank" rel="noopener" aria-label="Otro juego">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="2" y="7" width="20" height="10" rx="5"></rect>
+                                        <path d="M7 10v4M5 12h4"></path>
+                                        <circle cx="16" cy="11" r="0.8" fill="currentColor"></circle>
+                                        <circle cx="18.2" cy="13" r="0.8" fill="currentColor"></circle>
+                                    </svg>
+                                </a>
+                                <div class="contact-label">Próximamente</div>
+                            </div>
+                        </div>
+                        <div class="contact-email" id="contact-email">
+                            <a href="mailto:dunedle.es@gmail.com?subject=Feedback%20Dunedle">dunedle.es@gmail.com</a>
+                        </div>
                     </div>
                     <p class="disclaimer">
-                        Dunedle es un proyecto de fan hecho sin ánimo de lucro, sin afiliación con Frank Herbert, Legendary Pictures ni Warner Bros. Dune® es una marca registrada de sus respectivos propietarios. Versión beta v0.7 — puede contener errores.
+                        Dunedle es un proyecto de fan hecho sin ánimo de lucro, sin afiliación con Frank Herbert, Legendary Pictures ni Warner Bros. Dune® es una marca registrada de sus respectivos propietarios. Versión beta v0.9 — puede contener errores.
+                        <br><a href="privacy.html" target="_blank" rel="noopener" style="color:#888;">Política de privacidad</a>
+                        <br><a href="#" onclick="LanguageSelect.show(true); return false;" style="color:#888;">🌐 Idioma / Language</a>
                     </p>
                 `;
+                KanlyDaily.updateBadge();
             }
         };
 
@@ -983,7 +1177,8 @@
             renderKeyboard(container) {
                 const layout = [["Q","W","E","R","T","Y","U","I","O","P"],["A","S","D","F","G","H","J","K","L","Ñ"],["ENTER","Z","X","C","V","B","N","M","⌫"]];
                 const kb = document.createElement('div'); kb.className = 'keyboard';
-                layout.forEach(row => {
+                layout.forEach(rowRaw => {
+                    const row = Lang.current === 'en' ? rowRaw.filter(k => k !== 'Ñ') : rowRaw;
                     const r = document.createElement('div'); r.className = 'key-row';
                     row.forEach(k => {
                         const b = document.createElement('button');
@@ -1117,7 +1312,7 @@
                         }).join('')}</div>
                         <div class="input-group" style="margin:0 auto"><input type="text" id="e-input" placeholder="Nombre..." autocomplete="off"><div id="e-sugg" class="suggestions"></div></div>
                         <button class="btn-action" onclick="EmojiGame.check()">COMPROBAR</button>
-                        <div class="history-container">${this.state.history.map(h => `<div class="history-item history-wrong"><span>❌ ${h}</span></div>`).join('')}</div>
+                        <div class="history-container">${this.state.history.map(h => `<div class="history-item history-wrong"><span>❌ ${escapeHTML(h)}</span></div>`).join('')}</div>
                     </div>
                 `;
                 this.setupSearch();
@@ -1192,7 +1387,7 @@
                         ${this.hintsHTML()}
                         <div class="input-group" style="margin:0 auto"><input type="text" id="q-input" placeholder="Nombre..." autocomplete="off"><div id="q-sugg" class="suggestions"></div></div>
                         <button class="btn-action" onclick="QuoteGame.check()">COMPROBAR</button>
-                        <div class="history-container">${this.state.history.map(h => `<div class="history-item history-wrong"><span>❌ ${h}</span></div>`).join('')}</div>
+                        <div class="history-container">${this.state.history.map(h => `<div class="history-item history-wrong"><span>❌ ${escapeHTML(h)}</span></div>`).join('')}</div>
                     </div>
                 `;
                 this.setupSearch();
@@ -1230,7 +1425,7 @@
         // mujer en la película, y el Conde Fenring se rodó pero se cortó del montaje
         // final, así que no aparece. No toca ni sustituye la base de datos del libro
         // que usan Personaje del día ni Frase del día.
-        const DUNEDATA_MOVIE_CHARACTERS = [
+        let DUNEDATA_MOVIE_CHARACTERS = [
             { name: "Paul Atreides", emojis: ["🏜️","👁️","🐭","⚔️"], desc: "Interpretado por Timothée Chalamet.", org: "Casa Atreides", planet: "Arrakis", gender: "Hombre", height: 178, hairColor: "Castaño", movie: "Ambas películas" },
             { name: "Leto Atreides", emojis: ["🐂","🏛️","🛡️","👑"], desc: "Interpretado por Oscar Isaac.", org: "Casa Atreides", planet: "Caladan", gender: "Hombre", height: 174, hairColor: "Negro", movie: "Solo Dune (2021)" },
             { name: "Lady Jessica", emojis: ["🧘","🧬","💧","👁️"], desc: "Interpretada por Rebecca Ferguson.", org: "Bene Gesserit", planet: "Caladan", gender: "Mujer", height: 168, hairColor: "Castaño", movie: "Ambas películas" },
@@ -1323,7 +1518,7 @@
                     const gv = guessed[f.key], tv = this.target[f.key];
                     if(f.numeric){
                         const status = gv === tv ? 'correct' : 'wrong';
-                        return { value: gv + ' cm', status, arrow: gv === tv ? '' : (gv > tv ? '↓' : '↑') };
+                        return { value: formatHeight(gv), status, arrow: gv === tv ? '' : (gv > tv ? '↓' : '↑') };
                     }
                     const status = String(gv).toLowerCase() === String(tv).toLowerCase() ? 'correct' : 'wrong';
                     return { value: gv, status };
@@ -1333,6 +1528,7 @@
             showError(msg) {
                 const el = document.getElementById('c-error');
                 if(!el) return;
+                msg = t(msg);
                 el.textContent = msg;
                 setTimeout(() => { if(el.textContent === msg) el.textContent = ''; }, 2500);
             },
@@ -1427,6 +1623,14 @@
         // Busca por inicio de palabra: prioriza nombres/apellidos que EMPIEZAN por lo escrito,
         // en vez de cualquier nombre que simplemente contenga esa letra en cualquier parte.
         // Quita tildes/diacríticos y pasa a minúsculas, para que "Baron" encuentre "Barón".
+        // Limpia texto antes de volver a mostrarlo en la página, para que no se pueda
+        // inyectar HTML/JS escribiéndolo en un cuadro de respuesta (XSS).
+        function escapeHTML(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
         function foldAccents(str) {
             return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
         }
@@ -1441,7 +1645,7 @@
         // de "a" encontrando a todos los Atreides por el apellido) — solo permite que,
         // si el nombre completo empieza por uno de estos títulos, también valga buscar
         // por lo que viene justo después del título.
-        const NAME_TITLES = ['baron', 'princesa', 'lady', 'conde', 'shadout'];
+        const NAME_TITLES = ['baron', 'princesa', 'princess', 'lady', 'conde', 'count', 'shadout'];
 
         function smartNameSearch(names, query, limit) {
             const val = foldAccents(query.trim());
@@ -1582,6 +1786,45 @@
         };
 
         /* --- RACHA GLOBAL (días consecutivos jugando, en cualquier juego) --- */
+        // Lleva la cuenta de cuántos duelos de Kanly se han GANADO hoy, hasta un máximo de 3.
+        // Solo esas 3 primeras victorias del día suman punto a la Guerra de Facciones — se puede
+        // seguir jugando después, pero esas victorias extra ya no cuentan para la Guerra.
+        const KanlyDaily = {
+            key: 'dunedle_kanly_daily',
+            max: 3,
+            get() {
+                const raw = localStorage.getItem(this.key);
+                const today = todayStr();
+                if(!raw) return { date: today, count: 0 };
+                const data = JSON.parse(raw);
+                if(data.date !== today) return { date: today, count: 0 };
+                return data;
+            },
+            save(data) { localStorage.setItem(this.key, JSON.stringify(data)); },
+            recordWin() {
+                const data = this.get();
+                if(data.count < this.max){
+                    data.count++;
+                    this.save(data);
+                    FactionWar.recordWin('kanly', data.count);
+                } else {
+                    this.save(data); // asegura que la fecha quede al día, sin sumar más a la Guerra
+                }
+                this.updateBadge();
+                return data.count;
+            },
+            updateBadge() {
+                const el = document.getElementById('kanly-daily-checks');
+                if(!el) return;
+                const count = this.get().count;
+                let html = '';
+                for(let i = 0; i < this.max; i++){
+                    html += `<span class="kanly-check ${i < count ? 'filled' : ''}">✓</span>`;
+                }
+                el.innerHTML = html;
+            }
+        };
+
         const GlobalStreak = {
             key: 'dunedle_global_streak',
             get() {
@@ -1731,12 +1974,14 @@
                 const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
                 return lastDay - d.getDate();
             },
-            async recordWin(game) {
+            async recordWin(game, instance) {
                 if(!this.available) return;
                 const faction = localStorage.getItem('dunedle_faction');
                 if(faction !== 'atreides' && faction !== 'harkonnen') return; // sin facción elegida, no cuenta
                 const today = todayStr();
-                const receiptId = `${this.deviceId}_${game}_${today}`;
+                // "instance" permite que un mismo juego cuente varias veces el mismo día (p.ej. Kanly,
+                // hasta 3 veces), usando un recibo distinto por cada una en vez de uno solo por día.
+                const receiptId = `${this.deviceId}_${game}_${today}${instance ? '_' + instance : ''}`;
                 const receiptRef = this.db.ref('factionWar/receipts/' + receiptId);
                 try {
                     // Las reglas solo permiten crear este recibo si no existe ya: si esto falla,
@@ -1780,6 +2025,30 @@
         };
 
         /* --- MODO KANLY: duelo 1 contra 1 a contrarreloj, con matchmaking vía Firebase --- */
+        // Preguntas de trivia de opción múltiple, exclusivas del Modo Kanly.
+        let KANLY_TRIVIA = [
+            { prompt: "¿Quién lidera el sietch Tabr?", options: ["Duncan Idaho", "Stilgar", "Gurney Halleck", "Thufir Hawat"], answer: "Stilgar", explanation: "Stilgar es el líder fremen del sietch Tabr." },
+            { prompt: "¿Quién es el padre de Chani?", options: ["Pardot Kynes", "Leto Atreides", "Liet-Kynes", "Stilgar"], answer: "Liet-Kynes", explanation: "Liet-Kynes es el padre de Chani en las novelas originales." },
+            { prompt: "¿Qué cargo desempeña Duncan Idaho al servicio de los Atreides?", options: ["Navegante de la Cofradía", "Maestro de armas", "Emperador del Imperio", "Mentat de los Harkonnen"], answer: "Maestro de armas", explanation: "Duncan Idaho es un destacado maestro de armas de la Casa Atreides." },
+            { prompt: "¿Qué habilidad caracteriza a Gurney Halleck además de su capacidad de combate?", options: ["Es un músico y trovador", "Es un navegante espacial", "Es un planetólogo", "Es un maestro de la especia"], answer: "Es un músico y trovador", explanation: "Gurney es guerrero y también toca el baliset y canta." },
+            { prompt: "¿Quién es el mentat que sirve a la Casa Atreides?", options: ["Piter de Vries", "Thufir Hawat", "Glossu Rabban", "Hasimir Fenring"], answer: "Thufir Hawat", explanation: "Thufir Hawat es el mentat al servicio de los Atreides." },
+            { prompt: "¿Qué profesión tiene el doctor Wellington Yueh?", options: ["Planetólogo imperial", "Médico de la Suk School", "Navegante espacial", "Maestro de armas Ginaz"], answer: "Médico de la Suk School", explanation: "Yueh es médico formado en la Suk School." },
+            { prompt: "¿Quién es el emperador al comienzo de la primera novela de Dune?", options: ["Leto I", "Shaddam IV", "Paul Atreides", "Feyd-Rautha"], answer: "Shaddam IV", explanation: "Shaddam IV, de la Casa Corrino, ocupa el trono imperial." },
+            { prompt: "¿Quién es Irulan en la primera novela?", options: ["La hija del barón Harkonnen", "La hija del emperador Shaddam IV", "La hermana de Chani", "La madre de Paul"], answer: "La hija del emperador Shaddam IV", explanation: "La princesa Irulan es hija del emperador Shaddam IV." },
+            { prompt: "¿Qué parentesco tiene Feyd-Rautha con el barón Vladimir Harkonnen?", options: ["Es su hijo", "Es su sobrino", "Es su hermano", "Es su nieto"], answer: "Es su sobrino", explanation: "Feyd-Rautha es sobrino del barón y su posible heredero." },
+            { prompt: "¿Con qué otro nombre se conoce a Glossu Rabban?", options: ["Rabban el Sabio", "Rabban el Justo", "La Bestia Rabban", "Rabban el Navegante"], answer: "La Bestia Rabban", explanation: "Glossu Rabban recibe el sobrenombre de la Bestia." },
+            { prompt: "¿Quiénes son los Sardaukar?", options: ["Los soldados de élite del emperador", "Los sacerdotes fremen", "Los navegantes de la Cofradía", "Los científicos de Ix"], answer: "Los soldados de élite del emperador", explanation: "Los Sardaukar son las temidas tropas de élite imperiales." },
+            { prompt: "¿Para qué sirve un destiltraje fremen?", options: ["Para respirar bajo el agua", "Para conservar y recuperar agua corporal", "Para detectar la especia a distancia", "Para resistir el fuego de las armas"], answer: "Para conservar y recuperar agua corporal", explanation: "El destiltraje reduce la pérdida de humedad y recupera agua del cuerpo." },
+            { prompt: "¿Para qué se utiliza un golpeador en Arrakis?", options: ["Para llamar a los gusanos de arena", "Para extraer agua de las rocas", "Para medir la concentración de especia", "Para comunicarse con la Cofradía"], answer: "Para llamar a los gusanos de arena", explanation: "El golpeador produce vibraciones que atraen a los gusanos de arena." },
+            { prompt: "¿De qué está hecha tradicionalmente la hoja de un crysknife?", options: ["De cristal de Ix", "De metal imperial", "De un diente de gusano de arena", "De madera endurecida"], answer: "De un diente de gusano de arena", explanation: "El crysknife fremen se fabrica tradicionalmente a partir de un diente de gusano de arena." },
+            { prompt: "¿Qué característica distingue a un ornitóptero?", options: ["Sus alas baten para volar", "Solo puede desplazarse bajo tierra", "Se mueve mediante ruedas sobre la arena", "Viaja entre estrellas sin navegante"], answer: "Sus alas baten para volar", explanation: "Los ornitópteros son aeronaves cuyas alas baten como las de un ave." },
+            { prompt: "¿Qué capacidad está relacionada con la especia melange?", options: ["La invisibilidad permanente", "La presciencia", "La resurrección automática", "El control directo de los gusanos"], answer: "La presciencia", explanation: "La melange puede ampliar la percepción y posibilitar formas de presciencia." },
+            { prompt: "¿Qué es CHOAM en el Imperio de Dune?", options: ["Una orden religiosa", "Una organización comercial", "Una escuela de mentats", "Una unidad militar fremen"], answer: "Una organización comercial", explanation: "CHOAM es una poderosa organización comercial del Imperio." },
+            { prompt: "¿Qué representa el Landsraad?", options: ["La asamblea de las Grandes Casas", "El consejo de los navegantes", "La jerarquía de la Bene Gesserit", "La guardia personal de Paul"], answer: "La asamblea de las Grandes Casas", explanation: "El Landsraad reúne a las Grandes Casas del Imperio." },
+            { prompt: "¿Qué contiene el Gom Jabbar utilizado en la prueba de Paul?", options: ["Una gota de agua de vida", "Un veneno mortal", "Melange concentrada", "Sangre de gusano de arena"], answer: "Un veneno mortal", explanation: "El Gom Jabbar es una aguja envenenada empleada durante la prueba de la Bene Gesserit." },
+            { prompt: "¿Quién es Alia Atreides?", options: ["La hija de Paul y Chani", "La hija de Jessica y Leto Atreides", "La hija del barón Harkonnen", "La hermana de Irulan"], answer: "La hija de Jessica y Leto Atreides", explanation: "Alia es hija de Lady Jessica y del duque Leto, y hermana de Paul." }
+        ];
+
         const KanlyGame = {
             db: null, deviceId: null, available: false,
             matchId: null, matchRef: null, queueRef: null,
@@ -1807,22 +2076,35 @@
                 const rand = this.seededRandom(this.hashString(seed));
                 const pool = DUNEDATA_CHARACTERS;
                 const quotePool = DUNEDATA_QUOTES.filter(q => pool.some(c => c.name === q.char));
-                const qs = [];
-                for(let i = 0; i < count; i++){
-                    const useQuote = quotePool.length > 0 && rand() < 0.4;
-                    if(useQuote){
-                        const q = quotePool[Math.floor(rand() * quotePool.length)];
-                        const distractors = this.pickDistractors(pool.map(c => c.name), q.char, rand, 3);
-                        const options = this.shuffle([q.char, ...distractors], rand);
-                        qs.push({ type: 'quote', prompt: q.text, options, answer: q.char });
-                    } else {
-                        const c = pool[Math.floor(rand() * pool.length)];
-                        const distractors = this.pickDistractors(pool.map(x => x.name), c.name, rand, 3);
-                        const options = this.shuffle([c.name, ...distractors], rand);
-                        qs.push({ type: 'emoji', prompt: c.emojis.join(' '), options, answer: c.name });
-                    }
+
+                // Cada personaje, cada frase y cada pregunta de trivia se usa como MUCHO una vez
+                // por partida: se baraja cada lista entera en vez de sortear con repetición.
+                const emojiQs = this.shuffle(pool, rand).map(c => {
+                    const distractors = this.pickDistractors(pool.map(x => x.name), c.name, rand, 3);
+                    const options = this.shuffle([c.name, ...distractors], rand);
+                    return { type: 'emoji', prompt: c.emojis.join(' '), options, answer: c.name };
+                });
+                const quoteQs = this.shuffle(quotePool, rand).map(q => {
+                    const distractors = this.pickDistractors(pool.map(c => c.name), q.char, rand, 3);
+                    const options = this.shuffle([q.char, ...distractors], rand);
+                    return { type: 'quote', prompt: q.text, options, answer: q.char };
+                });
+                const triviaQs = this.shuffle(KANLY_TRIVIA, rand).map(t => {
+                    const options = this.shuffle(t.options, rand);
+                    return { type: 'trivia', prompt: t.prompt, options, answer: t.answer };
+                });
+
+                // Se intercalan las tres listas ya barajadas para que los tipos se mezclen,
+                // sin repetir ninguna pregunta dentro de la partida.
+                const lists = [emojiQs, quoteQs, triviaQs];
+                const merged = [];
+                let i = 0;
+                while(lists.some(l => l.length > 0)){
+                    const list = lists[i % lists.length];
+                    if(list.length > 0) merged.push(list.shift());
+                    i++;
                 }
-                return qs;
+                return merged.slice(0, count);
             },
             pickDistractors(allNames, correct, rand, n) {
                 const others = allNames.filter(x => x !== correct);
@@ -1941,7 +2223,7 @@
                 if(!KanlyGame.available){
                     container.innerHTML = `
                         <div class="victory-panel">
-                            <h2>🗡️ Modo Kanly (TEST)</h2>
+                            <h2>🗡️ Modo Kanly</h2>
                             <p style="color:#999; margin:12px 0;">Esta función todavía no está disponible — hace falta la misma conexión que usa la Guerra de Facciones.</p>
                             <button class="btn-action" onclick="Router.go('home')">INICIO</button>
                         </div>
@@ -1955,7 +2237,7 @@
             renderIdle() {
                 this.container.innerHTML = `
                     <div class="victory-panel">
-                        <h2>🗡️ Modo Kanly (TEST)</h2>
+                        <h2>🗡️ Modo Kanly</h2>
                         <p style="color:#999; font-size:0.9rem; margin:10px 0 20px;">
                             Duelo 1 contra 1. 60 segundos, el máximo de preguntas que puedas, gana quien más acierte.
                         </p>
@@ -2020,7 +2302,9 @@
                 const oppScore = (this.opponentData && this.opponentData.scores) ? (this.opponentData.scores[KanlyGame.opponentId] || 0) : 0;
                 const promptHTML = q.type === 'emoji'
                     ? `<div class="kanly-question-emojis">${q.prompt}</div><p style="color:#999;">¿Quién es?</p>`
-                    : `<p class="kanly-question-quote">"${q.prompt}"</p><p style="color:#999; margin-top:6px;">¿Quién lo dijo?</p>`;
+                    : q.type === 'quote'
+                    ? `<p class="kanly-question-quote">"${q.prompt}"</p><p style="color:#999; margin-top:6px;">¿Quién lo dijo?</p>`
+                    : `<p class="kanly-question-trivia">${q.prompt}</p>`;
                 this.container.innerHTML = `
                     <div class="victory-panel">
                         <div class="kanly-timer" id="kanly-timer">60s</div>
@@ -2066,7 +2350,12 @@
                 const myScore = KanlyGame.myScore;
                 const oppScore = (this.opponentData && this.opponentData.scores) ? (this.opponentData.scores[KanlyGame.opponentId] || 0) : 0;
                 let resultClass = 'tie', resultText = '¡Empate!';
-                if(myScore > oppScore){ resultClass = 'win'; resultText = '¡Has ganado el duelo!'; SoundManager.win(); Haptics.win(); Confetti.burst(); }
+                if(myScore > oppScore){
+                    resultClass = 'win'; resultText = '¡Has ganado el duelo!';
+                    SoundManager.win(); Haptics.win(); Confetti.burst();
+                    StatsManager.record('kanly', true, myScore);
+                    KanlyDaily.recordWin();
+                }
                 else if(myScore < oppScore){ resultClass = 'lose'; resultText = 'Has perdido el duelo'; SoundManager.wrong(); Haptics.wrong(); }
                 else { SoundManager.win(); }
                 this.container.innerHTML = `
@@ -2215,10 +2504,12 @@
             },
             wordleText(state) {
                 const rows = (state.statuses || []).map(st => st.map(s => s === 'correct' ? '🟩' : s === 'present' ? '🟨' : '⬛').join('')).join('\n');
-                return `DUNEDLE 🏜️ Palabra del día ${state.won ? state.guesses.length + '/6' : 'X/6'}\n\n${rows}`;
+                return t('DUNEDLE 🏜️ Palabra del día {r}', { r: state.won ? state.guesses.length + '/6' : 'X/6' }) + '\n\n' + rows;
             },
             simpleText(gameName, won, attempts) {
-                return `DUNEDLE 🏜️ ${gameName} — ${won ? `acertado en ${attempts} intento${attempts === 1 ? '' : 's'} ✅` : 'no lo logré hoy ❌'}`;
+                const g = t(gameName);
+                if(!won) return t('DUNEDLE 🏜️ {game} — no lo logré hoy ❌', { game: g });
+                return t(attempts === 1 ? 'DUNEDLE 🏜️ {game} — acertado en {n} intento ✅' : 'DUNEDLE 🏜️ {game} — acertado en {n} intentos ✅', { game: g, n: attempts });
             }
         };
 
@@ -2229,7 +2520,7 @@
                 return v || fallback;
             },
             dateLabel() {
-                return new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+                return new Date().toLocaleDateString(Lang.current === 'en' ? 'en-US' : 'es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
             },
             wrapText(ctx, text, x, y, maxWidth, lineHeight) {
                 const words = text.split(' ');
@@ -2282,7 +2573,7 @@
                 const w = 620, h = 780;
                 const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
                 const ctx = canvas.getContext('2d');
-                const { sand } = this.drawBase(ctx, w, h, state.won ? '¡Palabra acertada!' : 'El desierto venció', `${state.won ? state.guesses.length : 'X'}/6 intentos`);
+                const { sand } = this.drawBase(ctx, w, h, state.won ? t('¡Palabra acertada!') : t('El desierto venció'), t('{n}/6 intentos', { n: state.won ? state.guesses.length : 'X' }));
                 const rows = state.statuses || [];
                 const cols = rows[0] ? rows[0].length : 5;
                 const tile = Math.min(52, Math.floor((w - 100) / cols));
@@ -2301,33 +2592,33 @@
                     });
                 });
                 ctx.font = '15px sans-serif'; ctx.fillStyle = '#888'; ctx.textAlign = 'center';
-                ctx.fillText('dunedle · reto diario del universo de Dune', w / 2, h - 40);
+                ctx.fillText(t('dunedle · reto diario del universo de Dune'), w / 2, h - 40);
                 return canvas.toDataURL('image/png');
             },
             emojiImage(target, historyLen, won) {
                 const w = 620, h = 700;
                 const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
                 const ctx = canvas.getContext('2d');
-                this.drawBase(ctx, w, h, 'Personaje del día', won ? `Identificado en ${historyLen} intento${historyLen === 1 ? '' : 's'}` : 'No identificado');
+                this.drawBase(ctx, w, h, t('Personaje del día'), won ? t(historyLen === 1 ? 'Identificado en {n} intento' : 'Identificado en {n} intentos', { n: historyLen }) : t('No identificado'));
                 ctx.font = '80px sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
                 ctx.fillText(target.emojis.join(' '), w / 2, 320);
                 ctx.font = 'bold 30px sans-serif'; ctx.fillStyle = this.color('--sand', '#c2b280');
                 ctx.fillText(won ? target.name : '???', w / 2, 400);
                 ctx.font = '15px sans-serif'; ctx.fillStyle = '#888';
-                ctx.fillText('dunedle · reto diario del universo de Dune', w / 2, h - 40);
+                ctx.fillText(t('dunedle · reto diario del universo de Dune'), w / 2, h - 40);
                 return canvas.toDataURL('image/png');
             },
             quoteImage(target, historyLen, won) {
                 const w = 620, h = 700;
                 const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
                 const ctx = canvas.getContext('2d');
-                this.drawBase(ctx, w, h, 'Frase del día', won ? `Adivinado en ${historyLen} intento${historyLen === 1 ? '' : 's'}` : 'No adivinado');
+                this.drawBase(ctx, w, h, t('Frase del día'), won ? t(historyLen === 1 ? 'Adivinado en {n} intento' : 'Adivinado en {n} intentos', { n: historyLen }) : t('No adivinado'));
                 ctx.font = 'italic 22px Georgia, serif'; ctx.fillStyle = '#f0e6d2'; ctx.textAlign = 'center';
                 this.wrapText(ctx, `"${target.text}"`, w / 2, 290, w - 140, 34);
                 ctx.font = 'bold 26px sans-serif'; ctx.fillStyle = this.color('--sand', '#c2b280');
                 ctx.fillText(won ? '— ' + target.char : '— ???', w / 2, 460);
                 ctx.font = '15px sans-serif'; ctx.fillStyle = '#888';
-                ctx.fillText('dunedle · reto diario del universo de Dune', w / 2, h - 40);
+                ctx.fillText(t('dunedle · reto diario del universo de Dune'), w / 2, h - 40);
                 return canvas.toDataURL('image/png');
             },
             async shareOrDownload(dataUrl, filename, textFallback, btn) {
@@ -2368,10 +2659,83 @@
             }
         };
 
+        const LanguageSelect = {
+            show(isChange) {
+                const el = document.createElement('div');
+                el.className = 'modal-overlay';
+                el.id = 'lang-overlay';
+                el.innerHTML = `
+                    <div class="modal-box" style="text-align:center;">
+                        <h2>🌐 Idioma / Language</h2>
+                        <p>Elige tu idioma · Choose your language</p>
+                        <div class="faction-choice-row">
+                            <button class="faction-btn" onclick="Lang.set('es')"><span class="faction-emoji">🇪🇸</span><span>Español</span></button>
+                            <button class="faction-btn" onclick="Lang.set('en')"><span class="faction-emoji">🇺🇸</span><span>English (US)</span></button>
+                        </div>
+                        ${isChange ? `<button class="btn-action" style="background:transparent; border:1px solid var(--border-metal); color:#999;" onclick="document.getElementById('lang-overlay').remove()">✕</button>` : ''}
+                    </div>
+                `;
+                document.body.appendChild(el);
+            },
+            maybeShowFirstTime() {
+                if(Lang.chosen) return false;
+                this.show(false);
+                return true;
+            }
+        };
+
+        const CookieNotice = {
+            show(onCloseExtra) {
+                this._onCloseExtra = onCloseExtra || null;
+                const el = document.createElement('div');
+                el.className = 'modal-overlay';
+                el.id = 'cookie-notice-overlay';
+                el.innerHTML = `
+                    <div class="modal-box" style="text-align:center;">
+                        <h2>🍪 Antes de empezar</h2>
+                        <p>Dunedle guarda cosas en este dispositivo (localStorage) para recordar tu progreso, estadísticas, logros y preferencias.</p>
+                        <p>Si eliges una facción o buscas un duelo en el Modo Kanly, también se envía un identificador aleatorio (no personal) a una base de datos en la nube, solo para esas dos funciones.</p>
+                        <p>No usamos cookies de publicidad ni de rastreo.</p>
+                        <p style="margin-top:10px;"><a href="privacy.html" target="_blank" rel="noopener" style="color:var(--sand);">Leer la política de privacidad completa</a></p>
+                        <button class="btn-action" onclick="CookieNotice.close()">ENTENDIDO</button>
+                    </div>
+                `;
+                document.body.appendChild(el);
+            },
+            close() {
+                const el = document.getElementById('cookie-notice-overlay');
+                if(el) el.remove();
+                if(this._onCloseExtra){
+                    const cb = this._onCloseExtra;
+                    this._onCloseExtra = null;
+                    cb();
+                }
+            },
+            maybeShowFirstTime(onDone) {
+                if(!localStorage.getItem('dunedle_cookie_notice_seen')){
+                    localStorage.setItem('dunedle_cookie_notice_seen', '1');
+                    this.show(onDone);
+                } else if(onDone) {
+                    onDone();
+                }
+            }
+        };
+
+        function toggleContactEmail() {
+            const el = document.getElementById('contact-email');
+            if(el) el.classList.toggle('show');
+        }
+
+        applyLanguageData();
+
         window.onload = () => {
+            Translator.start();
             Spice.init(); Confetti.init(); ThemeManager.init(); SoundManager.init();
             FactionChoice.init(); FactionWar.init(); GlobalStreak.init(); KanlyGame.init();
-            Router.go('home'); HowTo.maybeShowFirstTime();
+            Router.go('home');
+            if(!LanguageSelect.maybeShowFirstTime()){
+                CookieNotice.maybeShowFirstTime(() => HowTo.maybeShowFirstTime());
+            }
         };
     </script>
 </body>
